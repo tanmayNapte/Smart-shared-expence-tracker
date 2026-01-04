@@ -228,6 +228,20 @@ input[type="checkbox"] {
     margin-right: 6px;
 }
 
+/* ---------- LOGOUT ---------- */
+
+.logout-link {
+    font-size: 13px;
+    color: #6b4f3f;
+    text-decoration: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+}
+
+.logout-link:hover {
+    background: #ece7df;
+}
+
 
 /* ---------- MEMBER LIST (CLEAN & ALIGNED) ---------- */
 

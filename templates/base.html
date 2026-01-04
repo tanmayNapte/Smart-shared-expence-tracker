@@ -10,13 +10,10 @@
 <body>
 
 <header>
-    <h2>💰 Debt Engine</h2>
-    {% if user %}
-        <div class="user">
-            {{ user.name }}
-            <a href="/logout" class="btn small">Logout</a>
-        </div>
-    {% endif %}
+    <h2>💰 Ledger</h2>
+      {% if session.get("user_id") %}
+    <a href="/logout" class="logout-link">Logout</a>
+  {% endif %}
 </header>
 
 <main>
