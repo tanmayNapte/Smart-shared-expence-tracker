@@ -1,0 +1,283 @@
+/* ---------- RESET ---------- */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #f5f2ec;
+    font-family: 'Inter', sans-serif;
+    color: #2b2b2b;
+}
+
+/* ---------- HEADER ---------- */
+header {
+    background: #ffffff;
+    padding: 18px 40px;
+    border-bottom: 1px solid #e3dfd8;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+header h2 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #2f3e34;
+    letter-spacing: 0.5px;
+}
+
+/* ---------- MAIN ---------- */
+main {
+    padding: 40px;
+    max-width: 1200px;
+    margin: auto;
+}
+
+/* ---------- LINKS ---------- */
+a {
+    text-decoration: none;
+    color: #2f3e34;
+}
+
+.link {
+    font-size: 14px;
+    color: #6b4f3f;
+}
+
+/* ---------- BUTTONS ---------- */
+.btn {
+    padding: 10px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn.primary {
+    background: #2f3e34;
+    color: #ffffff;
+}
+
+.btn.primary:hover {
+    background: #243229;
+}
+
+.btn.success {
+    background: #6b4f3f;
+    color: #ffffff;
+}
+
+.btn.success:hover {
+    background: #5a4033;
+}
+
+/* ---------- CARDS ---------- */
+.card {
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid #e3dfd8;
+}
+
+/* ---------- HEADINGS ---------- */
+h2, h3 {
+    font-family: 'Playfair Display', serif;
+    font-weight: 600;
+    color: #2f3e34;
+    margin-top: 0;
+}
+
+/* ---------- INPUTS ---------- */
+/* Update this block to exclude checkboxes from full-width */
+input:not([type="checkbox"]), select {
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    border-radius: 6px;
+    border: 1px solid #cfc9bf;
+    background: #faf9f6;
+    font-size: 14px;
+}
+
+input:focus, select:focus {
+    outline: none;
+    border-color: #b08d57;
+}
+
+/* ---------- GRID ---------- */
+.two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+/* ---------- BALANCES ---------- */
+.balance-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 16px;
+}
+
+.balance {
+    padding: 16px;
+    border-radius: 8px;
+    background: #faf9f6;
+    border: 1px solid #e3dfd8;
+}
+
+.balance strong {
+    display: block;
+    font-size: 15px;
+    margin-bottom: 4px;
+}
+
+.balance p {
+    font-size: 22px;
+    margin: 6px 0;
+}
+
+.balance.positive {
+    border-left: 4px solid #2f3e34;
+}
+
+.balance.negative {
+    border-left: 4px solid #6b4f3f;
+}
+
+/* ---------- LIST / ROW ---------- */
+.row {
+    padding: 12px 0;
+    border-bottom: 1px solid #ece7df;
+    font-size: 14px;
+}
+
+.row small {
+    display: block;
+    color: #6f6f6f;
+    margin-top: 4px;
+}
+
+/* ---------- AUTH CARDS ---------- */
+.auth-card {
+    max-width: 360px;
+    margin: 80px auto;
+    background: #ffffff;
+    padding: 30px;
+    border-radius: 12px;
+    border: 1px solid #e3dfd8;
+}
+
+/* ---------- LIST ---------- */
+ul {
+    padding-left: 18px;
+}
+
+li {
+    margin-bottom: 6px;
+}
+
+/* ---------- DASHBOARD ---------- */
+
+.group-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 24px;
+}
+
+.group-card {
+    background: #ffffff;
+    border: 1px solid #e3dfd8;
+    border-radius: 12px;
+    padding: 24px;
+    transition: all 0.25s ease;
+    position: relative;
+}
+
+.group-card:hover {
+    transform: translateY(-3px);
+    border-color: #b08d57;
+}
+
+.group-card h3 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.group-card .meta {
+    font-size: 13px;
+    color: #6f6f6f;
+    margin: 10px 0 20px;
+}
+
+.group-card .enter {
+    font-size: 13px;
+    color: #2f3e34;
+    font-weight: 500;
+}
+
+label {
+    display: block;
+    margin-bottom: 6px;
+}
+
+input[type="checkbox"] {
+    margin-right: 6px;
+}
+
+
+/* ---------- MEMBER LIST (CLEAN & ALIGNED) ---------- */
+
+.member-list {
+    border: 1px solid #e3dfd8;
+    border-radius: 10px;
+    background: #faf9f6;
+    max-height: 250px; /* Added scroll if list is long */
+    overflow-y: auto;
+}
+
+.member-row {
+    display: flex;
+    align-items: center; /* Vertically centers checkbox with the two lines of text */
+    gap: 12px;
+    padding: 10px 14px;
+    border-bottom: 1px solid #ece7df;
+    cursor: pointer;
+    margin-bottom: 0; /* Ensures no extra spacing between rows */
+}
+
+.member-row:last-child {
+    border-bottom: none;
+}
+
+.member-row:hover {
+    background: #f1ede6;
+}
+
+/* Specifically targets the checkbox to fix the size/margin issue */
+.member-row input[type="checkbox"] {
+    width: auto;      /* Prevents it from stretching to 100% */
+    margin: 0;        /* Removes the 14px bottom margin from the global input style */
+    flex-shrink: 0;   /* Prevents the checkbox from squishing */
+    cursor: pointer;
+}
+
+.member-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.3;
+}
+
+.member-name {
+    font-size: 14px;
+    font-weight: 500;
+    color: #2b2b2b;
+}
+
+.member-email {
+    font-size: 12px;
+    color: #6f6f6f;
+}

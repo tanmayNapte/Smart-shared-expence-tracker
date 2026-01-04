@@ -1,0 +1,596 @@
+from flask import Flask, request, jsonify, session, render_template, redirect, url_for
+from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
+from dotenv import load_dotenv
+from datetime import datetime
+import os
+
+# --------------------------------------------------
+# APP SETUP
+# --------------------------------------------------
+
+load_dotenv()
+
+app = Flask(__name__)
+app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
+
+db = SQLAlchemy(app)
+
+# --------------------------------------------------
+# MODELS
+# --------------------------------------------------
+
+class User(db.Model):
+    __tablename__ = "users"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+
+
+class Group(db.Model):
+    __tablename__ = "groups"
+
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(100), nullable=False)
+    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+
+class GroupMember(db.Model):
+    __tablename__ = "group_members"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+
+
+class Expense(db.Model):
+    __tablename__ = "expenses"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
+    amount = db.Column(db.Float, nullable=False)
+    description = db.Column(db.String(255))
+    paid_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ExpenseSplit(db.Model):
+    __tablename__ = "expense_splits"
+
+    id = db.Column(db.Integer, primary_key=True)
+    expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    amount_owed = db.Column(db.Float, nullable=False)
+
+
+class Settlement(db.Model):
+    __tablename__ = "settlements"
+
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
+    payer_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    receiver_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    amount = db.Column(db.Float, nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+# --------------------------------------------------
+# INIT (DEV ONLY)
+# --------------------------------------------------
+
+with app.app_context():
+    db.create_all()
+
+# --------------------------------------------------
+# HELPERS
+# --------------------------------------------------
+
+def calculate_balances(group_id):
+    balances = {}
+
+    members = GroupMember.query.filter_by(group_id=group_id).all()
+    for m in members:
+        balances[m.user_id] = 0.0
+
+    expenses = Expense.query.filter_by(group_id=group_id).all()
+    for exp in expenses:
+        balances[exp.paid_by] += exp.amount
+
+        splits = ExpenseSplit.query.filter_by(expense_id=exp.id).all()
+        for s in splits:
+            balances[s.user_id] -= s.amount_owed
+
+    settlements = Settlement.query.filter_by(group_id=group_id).all()
+    for s in settlements:
+        balances[s.payer_id] += s.amount
+        balances[s.receiver_id] -= s.amount
+
+    return balances
+@app.route("/settlements/add", methods=["POST"])
+def add_settlement_form():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    group_id = int(request.form["group_id"])
+    payer_id = int(request.form["payer_id"])
+    receiver_id = int(request.form["receiver_id"])
+    amount = float(request.form["amount"])
+
+    # Sanity checks
+    if payer_id == receiver_id or amount <= 0:
+        return redirect(f"/groups/{group_id}")
+
+    new_settlement = Settlement(
+        group_id=group_id,
+        payer_id=payer_id,
+        receiver_id=receiver_id,
+        amount=amount
+    )
+
+    db.session.add(new_settlement)
+    db.session.commit()
+
+    return redirect(f"/groups/{group_id}")
+
+
+
+
+def balance_integrity_ok(balances):
+    return abs(sum(balances.values())) < 0.01
+
+# --------------------------------------------------
+# AUTH
+# --------------------------------------------------
+
+@app.route("/api/auth/register", methods=["POST"])
+def register():
+    data = request.json
+    hashed = generate_password_hash(data["password"])
+
+    user = User(
+        name=data["name"],
+        email=data["email"],
+        password=hashed
+    )
+
+    db.session.add(user)
+    db.session.commit()
+    return jsonify({"id": user.id, "name": user.name, "email": user.email})
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def login():
+    data = request.json
+    user = User.query.filter_by(email=data["email"]).first()
+
+    if not user or not check_password_hash(user.password, data["password"]):
+        return jsonify({"error": "Invalid credentials"}), 401
+
+    return jsonify({"id": user.id, "name": user.name, "email": user.email})
+
+# --------------------------------------------------
+# USERS
+# --------------------------------------------------
+
+@app.route("/api/users")
+def all_users():
+    users = User.query.all()
+    return jsonify([{"id": u.id, "name": u.name, "email": u.email} for u in users])
+
+# --------------------------------------------------
+# GROUPS
+# --------------------------------------------------
+
+@app.route("/api/groups", methods=["POST"])
+def create_group():
+    data = request.json
+    group = Group(name=data["name"], created_by=data["creator_id"])
+    db.session.add(group)
+    db.session.commit()
+
+    for uid in data["member_ids"]:
+        db.session.add(GroupMember(group_id=group.id, user_id=uid))
+
+    db.session.commit()
+    return jsonify({"group_id": group.id})
+
+
+@app.route("/api/groups/<int:user_id>")
+def user_groups(user_id):
+    groups = (
+        db.session.query(Group)
+        .join(GroupMember)
+        .filter(GroupMember.user_id == user_id)
+        .all()
+    )
+
+    result = []
+    for g in groups:
+        count = GroupMember.query.filter_by(group_id=g.id).count()
+        result.append({"id": g.id, "name": g.name, "member_count": count})
+
+    return jsonify(result)
+
+
+@app.route("/api/groups/<int:group_id>/members")
+def group_members(group_id):
+    members = (
+        db.session.query(User)
+        .join(GroupMember)
+        .filter(GroupMember.group_id == group_id)
+        .all()
+    )
+
+    return jsonify([{"id": u.id, "name": u.name} for u in members])
+
+# --------------------------------------------------
+# EXPENSES
+# --------------------------------------------------
+
+@app.route("/api/expenses", methods=["POST"])
+def add_expense():
+    data = request.json
+
+    expense = Expense(
+        group_id=data["group_id"],
+        amount=data["amount"],
+        description=data.get("description"),
+        paid_by=data["paid_by"]
+    )
+
+    db.session.add(expense)
+    db.session.commit()
+
+    for uid, amt in data["splits"].items():
+        db.session.add(
+            ExpenseSplit(
+                expense_id=expense.id,
+                user_id=int(uid),
+                amount_owed=amt
+            )
+        )
+
+    db.session.commit()
+    return jsonify({"status": "expense added"})
+
+
+@app.route("/api/expenses/<int:group_id>")
+def list_expenses(group_id):
+    expenses = Expense.query.filter_by(group_id=group_id).order_by(Expense.created_at.desc()).all()
+    result = []
+
+    for e in expenses:
+        payer = User.query.get(e.paid_by)
+        result.append({
+            "id": e.id,
+            "amount": e.amount,
+            "description": e.description,
+            "payer_name": payer.name,
+            "created_at": e.created_at.isoformat()
+        })
+
+    return jsonify(result)
+
+# --------------------------------------------------
+# BALANCES
+# --------------------------------------------------
+
+@app.route("/api/balances/<int:group_id>")
+def balances(group_id):
+    balances = calculate_balances(group_id)
+
+    if not balance_integrity_ok(balances):
+        return jsonify({"error": "Balance integrity violated"}), 500
+
+    result = []
+    for uid, bal in balances.items():
+        user = User.query.get(uid)
+        result.append({"user_id": uid, "name": user.name, "balance": round(bal, 2)})
+
+    return jsonify(result)
+
+# --------------------------------------------------
+# SETTLEMENTS
+# --------------------------------------------------
+
+@app.route("/api/settlements", methods=["POST"])
+def add_settlement():
+    data = request.json
+
+    settlement = Settlement(
+        group_id=data["group_id"],
+        payer_id=data["payer_id"],
+        receiver_id=data["receiver_id"],
+        amount=data["amount"]
+    )
+
+    db.session.add(settlement)
+    db.session.commit()
+    return jsonify({"status": "settlement recorded"})
+
+
+@app.route("/api/settlements/<int:group_id>")
+def list_settlements(group_id):
+    settlements = Settlement.query.filter_by(group_id=group_id).order_by(Settlement.created_at.desc()).all()
+    result = []
+
+    for s in settlements:
+        payer = User.query.get(s.payer_id)
+        receiver = User.query.get(s.receiver_id)
+        result.append({
+            "id": s.id,
+            "amount": s.amount,
+            "payer_name": payer.name,
+            "receiver_name": receiver.name,
+            "created_at": s.created_at.isoformat()
+        })
+
+    return jsonify(result)
+
+# --------------------------------------------------
+# HTML Routes
+# --------------------------------------------------
+
+@app.route("/")
+def index():
+    if "user_id" in session:
+        return redirect("/dashboard")
+    return redirect("/login")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def login_page():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+
+        user = User.query.filter_by(email=email).first()
+        if not user or not check_password_hash(user.password, password):
+            return render_template("login.html", error="Invalid credentials")
+
+        session["user_id"] = user.id
+        return redirect("/dashboard")
+
+    return render_template("login.html")
+
+@app.route("/register", methods=["GET", "POST"])
+def register_page():
+    if request.method == "POST":
+        user = User(
+            name=request.form["name"],
+            email=request.form["email"],
+            password=generate_password_hash(request.form["password"])
+        )
+        db.session.add(user)
+        db.session.commit()
+        return redirect("/login")
+
+    return render_template("register.html")
+
+@app.route("/dashboard")
+def dashboard():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    user_id = session["user_id"]
+
+    groups = (
+        db.session.query(Group)
+        .join(GroupMember)
+        .filter(GroupMember.user_id == user_id)
+        .all()
+    )
+
+    result = []
+    for g in groups:
+        count = GroupMember.query.filter_by(group_id=g.id).count()
+        result.append({
+            "id": g.id,
+            "name": g.name,
+            "member_count": count
+        })
+
+    return render_template("dashboard.html", groups=result)
+
+@app.route("/groups/new", methods=["GET", "POST"])
+def new_group():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    current_user_id = session["user_id"]
+
+    # GET → show form
+    if request.method == "GET":
+        users = User.query.filter(User.id != current_user_id).all()
+        return render_template("create_group.html", users=users)
+
+    # POST → create group
+    group_name = request.form.get("name")
+    member_ids = request.form.getlist("members")  # optional
+
+    if not group_name:
+        users = User.query.filter(User.id != current_user_id).all()
+        return render_template(
+            "create_group.html",
+            users=users,
+            error="Group name is required"
+        )
+
+    # Create group
+    group = Group(name=group_name, created_by=current_user_id)
+    db.session.add(group)
+    db.session.commit()
+
+    # Always add creator
+    db.session.add(
+        GroupMember(group_id=group.id, user_id=current_user_id)
+    )
+
+    # Add selected members (if any)
+    for uid in member_ids:
+        db.session.add(
+            GroupMember(group_id=group.id, user_id=int(uid))
+        )
+
+    db.session.commit()
+    return redirect("/dashboard")
+
+
+@app.route("/groups/<int:group_id>/members", methods=["GET", "POST"])
+def add_members(group_id):
+    if "user_id" not in session:
+        return redirect("/login")
+
+    current_user_id = session["user_id"]
+
+    # Authorization: only group members can add others
+    is_member = GroupMember.query.filter_by(
+        group_id=group_id,
+        user_id=current_user_id
+    ).first()
+
+    if not is_member:
+        return "Unauthorized", 403
+
+    group = Group.query.get_or_404(group_id)
+
+    # Users not already in group
+    existing_ids = [
+        m.user_id for m in GroupMember.query.filter_by(group_id=group_id).all()
+    ]
+
+    available_users = User.query.filter(
+        User.id.notin_(existing_ids)
+    ).all()
+
+    # GET → show form
+    if request.method == "GET":
+        return render_template(
+            "add_members.html",
+            group=group,
+            users=available_users
+        )
+
+    # POST → add members
+    member_ids = request.form.getlist("members")
+
+    if not member_ids:
+        return render_template(
+            "add_members.html",
+            group=group,
+            users=available_users,
+            error="Select at least one user"
+        )
+
+    for uid in member_ids:
+        db.session.add(
+            GroupMember(group_id=group_id, user_id=int(uid))
+        )
+
+    db.session.commit()
+    return redirect(f"/groups/{group_id}")
+
+
+
+@app.route("/groups/<int:group_id>")
+def group_page(group_id):
+    if "user_id" not in session:
+        return redirect("/login")
+
+    # Basic authorization
+    member = GroupMember.query.filter_by(
+        group_id=group_id,
+        user_id=session["user_id"]
+    ).first()
+
+    if not member:
+        return "Unauthorized", 403
+
+    group = Group.query.get_or_404(group_id)
+
+    balances_raw = calculate_balances(group_id)
+    balances = []
+    for uid, bal in balances_raw.items():
+        user = User.query.get(uid)
+        balances.append({
+            "name": user.name,
+            "balance": round(bal, 2)
+        })
+
+    members = (
+        db.session.query(User)
+        .join(GroupMember)
+        .filter(GroupMember.group_id == group_id)
+        .all()
+    )
+
+    expenses = Expense.query.filter_by(group_id=group_id).order_by(Expense.created_at.desc()).all()
+
+    expense_data = []
+    for e in expenses:
+        payer = User.query.get(e.paid_by)
+        expense_data.append({
+            "amount": e.amount,
+            "description": e.description,
+            "payer_name": payer.name
+        })
+
+    return render_template(
+        "group.html",
+        group=group,
+        balances=balances,
+        members=members,
+        expenses=expense_data
+    )
+
+@app.route("/expenses/add", methods=["POST"])
+def add_expense_form():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    group_id = int(request.form["group_id"])
+    amount = float(request.form["amount"])
+    paid_by = int(request.form["paid_by"])
+    description = request.form.get("description")
+
+    expense = Expense(
+        group_id=group_id,
+        amount=amount,
+        paid_by=paid_by,
+        description=description
+    )
+    db.session.add(expense)
+    db.session.commit()
+
+    members = GroupMember.query.filter_by(group_id=group_id).all()
+    split_amount = amount / len(members)
+
+    for m in members:
+        db.session.add(
+            ExpenseSplit(
+                expense_id=expense.id,
+                user_id=m.user_id,
+                amount_owed=split_amount
+            )
+        )
+
+    db.session.commit()
+    return redirect(f"/groups/{group_id}")
+
+
+@app.route("/logout")
+def logout():
+    session.clear()
+    return redirect("/login")
+
+
+
+# --------------------------------------------------
+# RUN
+# --------------------------------------------------
+
+if __name__ == "__main__":
+    app.run(debug=True)

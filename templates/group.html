@@ -1,0 +1,128 @@
+{% extends "base.html" %} {% block content %}
+
+<a href="/dashboard" class="link">← Back to Groups</a>
+
+<!-- GROUP HEADER -->
+<div
+  style="
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  "
+>
+  <h2>{{ group.name }}</h2>
+
+  <!-- ADD MEMBER BUTTON -->
+  <a href="/groups/{{ group.id }}/members" class="btn primary">
+    + Add Members
+  </a>
+</div>
+
+<!-- MEMBERS LIST -->
+<div class="card">
+  <h3>Members</h3>
+  <ul>
+    {% for m in members %}
+    <li>{{ m.name }} ({{ m.email }})</li>
+    {% endfor %}
+  </ul>
+</div>
+
+<!-- BALANCES -->
+<div class="card">
+  <h3>Balances</h3>
+  <div class="balance-grid">
+    {% for b in balances %}
+    <div
+      class="balance {% if b.balance > 0 %}positive{% elif b.balance < 0 %}negative{% endif %}"
+    >
+      <strong>{{ b.name }}</strong>
+      <p>₹{{ b.balance | abs }}</p>
+      <small>
+        {% if b.balance > 0 %}gets back {% elif b.balance < 0 %}owes {% else
+        %}settled{% endif %}
+      </small>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<!-- ADD EXPENSE -->
+<div class="two-col">
+  <div class="card">
+    <h3>Add Expense</h3>
+
+    <form method="post" action="/expenses/add">
+      <!-- IMPORTANT: group_id -->
+      <input type="hidden" name="group_id" value="{{ group.id }}" />
+
+      <input name="amount" placeholder="Amount" required />
+      <input name="description" placeholder="Description" />
+
+      <select name="paid_by" required>
+        <option value="">Paid by</option>
+        {% for m in members %}
+        <option value="{{ m.id }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+
+      <button class="btn primary">Add Expense</button>
+    </form>
+  </div>
+
+  <!-- SETTLEMENT -->
+  <div class="card">
+    <h3>Record Settlement</h3>
+
+    <form method="post" action="/settlements/add">
+      <input type="hidden" name="group_id" value="{{ group.id }}" />
+
+      <label>Payer</label>
+      <select name="payer_id" required>
+        <option value="">Select payer</option>
+        {% for m in members %}
+        <option value="{{ m.id }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+
+      <label>Receiver</label>
+      <select name="receiver_id" required>
+        <option value="">Select receiver</option>
+        {% for m in members %}
+        <option value="{{ m.id }}">{{ m.name }}</option>
+        {% endfor %}
+      </select>
+
+      <input name="amount" placeholder="Amount" required />
+
+      <button class="btn success">Record Settlement</button>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>Settlement History</h3>
+
+    {% if settlements %} {% for s in settlements %}
+    <div class="row">
+      ₹{{ s.amount }} — {{ s.payer_name }} → {{ s.receiver_name }}
+      <small>{{ s.created_at }}</small>
+    </div>
+    {% endfor %} {% else %}
+    <p>No settlements yet.</p>
+    {% endif %}
+  </div>
+</div>
+
+<!-- RECENT EXPENSES -->
+<div class="card">
+  <h3>Recent Expenses</h3>
+  {% for e in expenses %}
+  <div class="row">
+    ₹{{ e.amount }} — {{ e.description or "No description" }}
+    <small>Paid by {{ e.payer_name }}</small>
+  </div>
+  {% endfor %}
+</div>
+
+{% endblock %}

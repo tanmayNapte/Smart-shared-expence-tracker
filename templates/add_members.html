@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a href="/groups/{{ group.id }}" class="link">← Back to Group</a>
+
+<div class="card" style="max-width:520px; margin:40px auto;">
+    <h2>Add Members</h2>
+
+    <p style="color:#6f6f6f; font-size:14px; margin-bottom:24px;">
+        Add trusted members to <strong>{{ group.name }}</strong>.  
+        Only existing users can be added.
+    </p>
+
+    {% if error %}
+        <p style="color:#8b2e2e; font-size:14px; margin-bottom:16px;">
+            {{ error }}
+        </p>
+    {% endif %}
+
+    {% if users and users|length > 0 %}
+        <form method="post">
+
+            <div class="member-list">
+                {% for u in users %}
+                    <label class="member-row">
+                        <input type="checkbox" name="members" value="{{ u.id }}">
+                        <div>
+                            <div class="member-name">{{ u.name }}</div>
+                            <div class="member-email">{{ u.email }}</div>
+                        </div>
+                    </label>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top:28px;">
+                <button class="btn primary" style="width:100%;">
+                    Add Selected Members
+                </button>
+            </div>
+        </form>
+    {% else %}
+        <p style="font-size:14px; color:#6f6f6f;">
+            All available users are already members of this group.
+        </p>
+    {% endif %}
+</div>
+
+{% endblock %}

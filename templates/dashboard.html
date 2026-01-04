@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:30px;">
+    <div>
+        <h2>Your Groups</h2>
+        <p style="color:#6f6f6f; font-size:14px; margin-top:6px;">
+            Manage shared expenses with clarity and discretion.
+        </p>
+    </div>
+
+    <a href="/groups/new" class="btn primary">
+        + Create Group
+    </a>
+</div>
+
+{% if groups %}
+    <div class="group-grid">
+        {% for g in groups %}
+            <a href="/groups/{{ g.id }}" class="group-card">
+                <h3>{{ g.name }}</h3>
+
+                <p class="meta">
+                    {{ g.member_count }} members
+                </p>
+
+                <span class="enter">
+                    View Group →
+                </span>
+            </a>
+        {% endfor %}
+    </div>
+{% else %}
+    <div class="card">
+        <p>No groups yet.</p>
+        <p style="color:#6f6f6f; font-size:14px;">
+            Create a group to start tracking shared expenses.
+        </p>
+    </div>
+{% endif %}
+
+{% endblock %}
