@@ -14,16 +14,20 @@
   </head>
   <body>
     <header>
-      <h2>💰 Ledger</h2>
-      {% if current_user %} {% if current_user.role == "admin" %}
-      <a href="/admin/users/new" class="logout-link">Create User</a>
-      {% endif %} {% endif %}
-      <div class="nav-right">
-        {% if current_user %}
-        <span class="user-name"> {{ current_user.name }} </span>
-        <a href="/logout" class="btn logout"> Logout </a>
-        {% endif %}
-      </div>
+      <nav class="navbar">
+        <div class="nav-left">
+          <a href="/dashboard" class="brand">Expense Tracker</a>
+        </div>
+
+        <div class="nav-right">
+          {% if current_user and current_user.role == "admin" %}
+          <a href="/admin/create-user" class="btn primary"> Create User </a>
+          {% endif %} {% if current_user %}
+          <span class="user-name">{{ current_user.name }}</span>
+          <a href="/logout" class="btn logout">Logout</a>
+          {% endif %}
+        </div>
+      </nav>
     </header>
 
     <main>{% block content %}{% endblock %}</main>
