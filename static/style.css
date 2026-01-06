@@ -6,7 +6,7 @@
 body {
     margin: 0;
     background: #f5f2ec;
-    font-family: 'Inter', sans-serif;
+    font-family: "Inter", sans-serif;
     color: #2b2b2b;
 }
 
@@ -21,7 +21,7 @@ header {
 }
 
 header h2 {
-    font-family: 'Playfair Display', serif;
+    font-family: "Playfair Display", serif;
     font-weight: 600;
     color: #2f3e34;
     letter-spacing: 0.5px;
@@ -84,8 +84,9 @@ a {
 }
 
 /* ---------- HEADINGS ---------- */
-h2, h3 {
-    font-family: 'Playfair Display', serif;
+h2,
+h3 {
+    font-family: "Playfair Display", serif;
     font-weight: 600;
     color: #2f3e34;
     margin-top: 0;
@@ -93,7 +94,8 @@ h2, h3 {
 
 /* ---------- INPUTS ---------- */
 /* Update this block to exclude checkboxes from full-width */
-input:not([type="checkbox"]), select {
+input:not([type="checkbox"]),
+select {
     width: 100%;
     padding: 10px 12px;
     margin-bottom: 14px;
@@ -103,7 +105,8 @@ input:not([type="checkbox"]), select {
     font-size: 14px;
 }
 
-input:focus, select:focus {
+input:focus,
+select:focus {
     outline: none;
     border-color: #b08d57;
 }
@@ -123,6 +126,7 @@ input:focus, select:focus {
 }
 
 .balance {
+    font-family: sans-serif;
     padding: 16px;
     border-radius: 8px;
     background: #faf9f6;
@@ -136,6 +140,7 @@ input:focus, select:focus {
 }
 
 .balance p {
+    font-family: serif;
     font-size: 22px;
     margin: 6px 0;
 }
@@ -189,17 +194,19 @@ li {
 }
 
 .group-card {
-    background: #ffffff;
-    border: 1px solid #e3dfd8;
-    border-radius: 12px;
-    padding: 24px;
-    transition: all 0.25s ease;
-    position: relative;
+    display: block;
+    padding: 18px;
+    border-radius: 14px;
+    background: #faf7f3;
+    border: 1px solid #e7dfd6;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s ease;
 }
 
 .group-card:hover {
-    transform: translateY(-3px);
-    border-color: #b08d57;
+    transform: translateY(-2px);
+    border-color: #d4c5b6;
 }
 
 .group-card h3 {
@@ -228,6 +235,85 @@ input[type="checkbox"] {
     margin-right: 6px;
 }
 
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-bottom: 32px;
+}
+
+.dashboard-title {
+    font-size: 26px;
+    margin-bottom: 4px;
+}
+
+.dashboard-subtitle {
+    font-size: 14px;
+    color: #6f6f6f;
+}
+
+
+/* CARD CONTENT */
+.group-card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+}
+
+.group-name {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.group-members {
+    font-size: 13px;
+    color: #7a6a58;
+}
+
+.group-card-bottom {
+    margin-top: 14px;
+}
+
+.enter {
+    font-size: 14px;
+    color: #5b4636;
+    font-weight: 500;
+}
+
+/* EMPTY STATE */
+.empty-state {
+    text-align: center;
+    padding: 40px 30px;
+}
+
+.empty-state h3 {
+    margin-bottom: 8px;
+}
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.user-name {
+    font-size: 14px;
+    color: #000000;
+    font-weight: 500;
+    padding-right: 6px;
+}
+
+.btn.logout {
+    background: transparent;
+    border: 1px solid #d2c4b6;
+    color: #000000;
+}
+
+.btn.logout:hover {
+    background: #f3ede6;
+}
+
+
 /* ---------- LOGOUT ---------- */
 
 .logout-link {
@@ -242,25 +328,28 @@ input[type="checkbox"] {
     background: #ece7df;
 }
 
-
 /* ---------- MEMBER LIST (CLEAN & ALIGNED) ---------- */
 
 .member-list {
     border: 1px solid #e3dfd8;
     border-radius: 10px;
     background: #faf9f6;
-    max-height: 250px; /* Added scroll if list is long */
+    max-height: 250px;
+    /* Added scroll if list is long */
     overflow-y: auto;
+    font-family: serif;
 }
 
 .member-row {
     display: flex;
-    align-items: center; /* Vertically centers checkbox with the two lines of text */
+    align-items: center;
+    /* Vertically centers checkbox with the two lines of text */
     gap: 12px;
     padding: 10px 14px;
     border-bottom: 1px solid #ece7df;
     cursor: pointer;
-    margin-bottom: 0; /* Ensures no extra spacing between rows */
+    margin-bottom: 0;
+    /* Ensures no extra spacing between rows */
 }
 
 .member-row:last-child {
@@ -273,9 +362,12 @@ input[type="checkbox"] {
 
 /* Specifically targets the checkbox to fix the size/margin issue */
 .member-row input[type="checkbox"] {
-    width: auto;      /* Prevents it from stretching to 100% */
-    margin: 0;        /* Removes the 14px bottom margin from the global input style */
-    flex-shrink: 0;   /* Prevents the checkbox from squishing */
+    width: auto;
+    /* Prevents it from stretching to 100% */
+    margin: 0;
+    /* Removes the 14px bottom margin from the global input style */
+    flex-shrink: 0;
+    /* Prevents the checkbox from squishing */
     cursor: pointer;
 }
 
@@ -294,4 +386,147 @@ input[type="checkbox"] {
 .member-email {
     font-size: 12px;
     color: #6f6f6f;
+}
+
+/*-----------------------
+  Mobile Responsiveness
+-----------------------*/
+
+@media (max-width: 768px) {
+    body {
+        padding: 0;
+    }
+
+    main {
+        padding: 16px;
+    }
+
+    h1,
+    h2 {
+        font-size: 20px;
+    }
+
+    h3 {
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 768px) {
+    .group-grid {
+        display: block;
+    }
+
+    .group-card {
+        margin-bottom: 14px;
+    }
+}
+
+@media (max-width: 768px) {
+    .two-col {
+        display: block;
+    }
+
+    .two-col .card {
+        margin-bottom: 18px;
+    }
+}
+
+@media (max-width: 768px) {
+    .ledger-row {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .ledger-amount {
+        font-size: 16px;
+    }
+
+    .ledger-status {
+        font-size: 11px;
+    }
+}
+
+@media (max-width: 768px) {
+
+    input,
+    select,
+    button {
+        font-size: 16px;
+        padding: 12px;
+    }
+
+    button {
+        width: 100%;
+    }
+}
+
+@media (max-width: 768px) {
+    header {
+        padding: 14px 16px;
+    }
+
+    header h2 {
+        font-size: 18px;
+    }
+
+    .logout-link {
+        font-size: 12px;
+    }
+}
+/* ---------- SUGGESTED SETTLEMENT (FORM-LIKE CARD) ---------- */
+
+.suggested-settlement {
+    background: #fffdf8;
+    border: 1px solid #e3dfd8;
+    border-radius: 10px;
+    padding: 16px 18px;
+    margin-bottom: 16px;
+}
+
+.settlement-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+.settlement-row .label {
+    font-size: 13px;
+    color: #6b4f3f;
+}
+
+.settlement-row .value {
+    font-size: 14px;
+    color: #2b2b2b;
+    font-weight: 500;
+}
+
+.settlement-row .amount {
+    font-family: serif;
+    font-size: 18px;
+    color: #2f3e34;
+}
+
+.settlement-note {
+    font-size: 12px;
+    color: #8a857d;
+    margin-top: 6px;
+}
+
+.flash {
+  padding: 12px 14px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+}
+
+.flash.error {
+  background: #f8eaea;
+  color: #8b2e2e;
+  border: 1px solid #e2bcbc;
+}
+
+.flash.success {
+  background: #eef6ee;
+  color: #2f6b3a;
+  border: 1px solid #b7d4bc;
 }

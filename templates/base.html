@@ -1,24 +1,31 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
+  <head>
+    <meta charset="UTF-8" />
     <title>{{ title or "Debt Engine" }}</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h2>💰 Ledger</h2>
+      {% if current_user %} {% if current_user.role == "admin" %}
+      <a href="/admin/users/new" class="logout-link">Create User</a>
+      {% endif %} {% endif %}
+      <div class="nav-right">
+        {% if current_user %}
+        <span class="user-name"> {{ current_user.name }} </span>
+        <a href="/logout" class="btn logout"> Logout </a>
+        {% endif %}
+      </div>
+    </header>
 
-</head>
-<body>
-
-<header>
-    <h2>💰 Ledger</h2>
-      {% if session.get("user_id") %}
-    <a href="/logout" class="logout-link">Logout</a>
-  {% endif %}
-</header>
-
-<main>
-    {% block content %}{% endblock %}
-</main>
-
-</body>
+    <main>{% block content %}{% endblock %}</main>
+  </body>
 </html>

@@ -48,6 +48,37 @@
   </div>
 </div>
 
+{% if suggestions %}
+<div class="card">
+    <h3>Suggested Settlements</h3>
+
+    {% for s in suggestions %}
+    <div class="suggested-settlement">
+        <div class="settlement-row">
+            <span class="label">From</span>
+            <span class="value">{{ s.from_name }}</span>
+        </div>
+
+        <div class="settlement-row">
+            <span class="label">To</span>
+            <span class="value">{{ s.to_name }}</span>
+        </div>
+
+        <div class="settlement-row">
+            <span class="label">Amount</span>
+            <span class="amount">₹{{ s.amount }}</span>
+        </div>
+
+        <div class="settlement-note">
+            Recommended settlement to balance accounts
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+
+
 <!-- ADD EXPENSE -->
 <div class="two-col">
   <div class="card">
@@ -97,6 +128,9 @@
       <input name="amount" placeholder="Amount" required />
 
       <button class="btn success">Record Settlement</button>
+      <p style="font-size: 12px; color: #6f6f6f">
+        You can only settle up to the amount owed.
+      </p>
     </form>
   </div>
 

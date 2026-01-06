@@ -1,9 +1,10 @@
-from flask import Flask, request, jsonify, session, render_template, redirect, url_for
+from flask import Flask, request, jsonify, session, render_template, redirect, url_for,flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from datetime import datetime
 import os
+from sqlalchemy import or_
 
 # --------------------------------------------------
 # APP SETUP
@@ -24,11 +25,11 @@ db = SQLAlchemy(app)
 
 class User(db.Model):
     __tablename__ = "users"
-
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    password = db.Column(db.String(255), nullable=False)
+    name = db.Column(db.String(100))
+    email = db.Column(db.String(120), unique=True)
+    password = db.Column(db.String(200))
+    role = db.Column(db.String(20), default="user")  # admin / user
 
 
 class Group(db.Model):
@@ -81,12 +82,28 @@ class Settlement(db.Model):
 # INIT (DEV ONLY)
 # --------------------------------------------------
 
+@app.context_processor
+def inject_current_user():
+    if "user_id" in session:
+        user = User.query.get(session["user_id"])
+        return {"current_user": user}
+    return {"current_user": None}
+
+
+
 with app.app_context():
     db.create_all()
 
 # --------------------------------------------------
 # HELPERS
 # --------------------------------------------------
+
+def admin_required():
+    if "user_id" not in session:
+        return False
+    user = User.query.get(session["user_id"])
+    return user and user.role == "admin"
+
 
 def calculate_balances(group_id):
     balances = {}
@@ -202,7 +219,7 @@ def create_group():
 def user_groups(user_id):
     groups = (
         db.session.query(Group)
-        .join(GroupMember)
+        .join(GroupMember, Group.id == GroupMember.group_id)
         .filter(GroupMember.user_id == user_id)
         .all()
     )
@@ -219,8 +236,9 @@ def user_groups(user_id):
 def group_members(group_id):
     members = (
         db.session.query(User)
-        .join(GroupMember)
+        .join(GroupMember, User.id == GroupMember.user_id)
         .filter(GroupMember.group_id == group_id)
+
         .all()
     )
 
@@ -349,12 +367,45 @@ def login_page():
 
         user = User.query.filter_by(email=email).first()
         if not user or not check_password_hash(user.password, password):
-            return render_template("login.html", error="Invalid credentials")
+            flash("Invalid email or password", "error")
+            return redirect("/login")
 
         session["user_id"] = user.id
+        flash("Logged in successfully", "success")
         return redirect("/dashboard")
 
     return render_template("login.html")
+
+@app.route("/admin/users/new", methods=["GET", "POST"])
+def create_user():
+    if not admin_required():
+        return redirect("/dashboard")
+
+    if request.method == "POST":
+        name = request.form["name"]
+        email = request.form["email"]
+        password = request.form["password"]
+
+        if User.query.filter_by(email=email).first():
+            return render_template(
+                "create_user.html",
+                error="User already exists"
+            )
+
+        user = User(
+            name=name,
+            email=email,
+            password=generate_password_hash(password),
+            role="user"
+        )
+
+        db.session.add(user)
+        db.session.commit()
+
+        return redirect("/dashboard")
+
+    return render_template("create_user.html")
+
 
 @app.route("/register", methods=["GET", "POST"])
 def register_page():
@@ -379,8 +430,14 @@ def dashboard():
 
     groups = (
         db.session.query(Group)
-        .join(GroupMember)
-        .filter(GroupMember.user_id == user_id)
+        .outerjoin(GroupMember, Group.id == GroupMember.group_id)
+        .filter(
+            or_(
+                Group.created_by == user_id,
+                GroupMember.user_id == user_id
+            )
+        )
+        .distinct()
         .all()
     )
 
@@ -522,7 +579,7 @@ def group_page(group_id):
 
     members = (
         db.session.query(User)
-        .join(GroupMember)
+        .join(GroupMember, User.id == GroupMember.user_id)
         .filter(GroupMember.group_id == group_id)
         .all()
     )
@@ -537,13 +594,25 @@ def group_page(group_id):
             "description": e.description,
             "payer_name": payer.name
         })
+        
+    suggestions_raw = suggest_settlements(group_id)
+
+    suggestions = []
+    for s in suggestions_raw:
+        suggestions.append({
+            "from_name": User.query.get(s["from"]).name,
+            "to_name": User.query.get(s["to"]).name,
+            "amount": s["amount"]
+        })
+
 
     return render_template(
         "group.html",
         group=group,
         balances=balances,
         members=members,
-        expenses=expense_data
+        expenses=expense_data,
+        suggestions=suggestions
     )
 
 @app.route("/expenses/add", methods=["POST"])
@@ -580,6 +649,47 @@ def add_expense_form():
     db.session.commit()
     return redirect(f"/groups/{group_id}")
 
+def suggest_settlements(group_id):
+    balances = calculate_balances(group_id)
+
+    creditors = []
+    debtors = []
+
+    for user_id, balance in balances.items():
+        if balance > 0:
+            creditors.append([user_id, balance])
+        elif balance < 0:
+            debtors.append([user_id, -balance])  # store positive owed amount
+
+    creditors.sort(key=lambda x: x[1], reverse=True)
+    debtors.sort(key=lambda x: x[1], reverse=True)
+
+    suggestions = []
+
+    i = j = 0
+    while i < len(debtors) and j < len(creditors):
+        debtor_id, debtor_amt = debtors[i]
+        creditor_id, creditor_amt = creditors[j]
+
+        settle_amt = min(debtor_amt, creditor_amt)
+
+        suggestions.append({
+            "from": debtor_id,
+            "to": creditor_id,
+            "amount": round(settle_amt, 2)
+        })
+
+        debtors[i][1] -= settle_amt
+        creditors[j][1] -= settle_amt
+
+        if debtors[i][1] == 0:
+            i += 1
+        if creditors[j][1] == 0:
+            j += 1
+
+    return suggestions
+
+
 
 @app.route("/logout")
 def logout():
@@ -591,6 +701,5 @@ def logout():
 # --------------------------------------------------
 # RUN
 # --------------------------------------------------
-
 if __name__ == "__main__":
     app.run(debug=True)
