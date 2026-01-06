@@ -10,10 +10,17 @@ from sqlalchemy import or_
 # APP SETUP
 # --------------------------------------------------
 
+# Update this section in app.py
 load_dotenv()
 
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = os.getenv("DATABASE_URL")
+
+# Logic to fix the database URI for production
+uri = os.getenv("DATABASE_URL")
+if uri and uri.startswith("postgres://"):
+    uri = uri.replace("postgres://", "postgresql://", 1)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
@@ -718,4 +725,6 @@ def logout():
 # RUN
 # --------------------------------------------------
 if __name__ == "__main__":
-    app.run(debug=True)
+    # Get port from environment or default to 5000 for local dev
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
