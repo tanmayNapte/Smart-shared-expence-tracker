@@ -1,79 +1,48 @@
-💰 Smart Shared Expense Tracker (Debt Engine)
+# Smart Shared Expense Tracker (Debt Engine)
 
-A Flask-based web application to manage shared expenses, balances, and settlements within groups.
-Designed to keep expense tracking simple, transparent, and fair — without unnecessary complexity.
+A Flask-based web application to manage **shared group expenses**, calculate **balances**, and generate **optimal settlement suggestions**.
 
-🚀 Features
+---
 
-🔐 User Authentication
+## 🚀 Features
 
-Secure login system
+- User authentication (login / logout)
+- Group-based expense tracking
+- Automatic balance calculation
+- Suggested settlements to minimize transactions
+- Settlement history tracking
+- Admin role for user creation
+- Clean card-based UI
 
-Role-based access (Admin / User)
+---
 
-👥 Group Management
+## 🛠 Tech Stack
 
-Create groups for trips, flats, or events
+- **Backend:** Python, Flask
+- **ORM:** SQLAlchemy
+- **Database:** PostgreSQL (production) / SQLite (development)
+- **Frontend:** Jinja2, HTML, CSS
+- **Auth:** Session-based authentication
 
-Add members to groups
+---
 
-View only groups you belong to
+## 📂 Project Structure
 
-💸 Expense Tracking
 
-Add expenses with payer and description
-
-Automatically split expenses among group members
-
-⚖️ Balance Calculation
-
-See who owes money and who should get paid
-
-Real-time balance updates per member
-
-🔁 Suggested Settlements
-
-Smart recommendations on who should pay whom
-
-Minimizes number of transactions needed to settle balances
-
-🧾 Settlement Records
-
-Record settlements between members
-
-View settlement history with timestamps
-
-🎨 Clean UI
-
-Card-based layout
-
-Old-money inspired neutral color palette
-
-Responsive and readable typography
-
-🛠 Tech Stack
-
-Backend: Python, Flask
-
-Database: PostgreSQL (production), SQLite (local)
-
-ORM: SQLAlchemy
-
-Frontend: HTML, Jinja2, CSS
-
-Authentication: Flask sessions
-
-📂 Project Structure
 Smart_Expence_tracker/
 │
 ├── app.py
-├── templates/
-│   ├── base.html
-│   ├── dashboard.html
-│   ├── group.html
-│   └── auth templates
-│
-├── static/
-│   └── style.css
-│
+├── requirements.txt
 ├── .gitignore
+│
+├── templates/
+│ ├── base.html
+│ ├── login.html
+│ ├── dashboard.html
+│ ├── create_group.html
+│ ├── group.html
+│ └── add_members.html
+│
+└── static/
+└── style.css
+
