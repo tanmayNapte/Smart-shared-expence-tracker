@@ -16,14 +16,14 @@
     <header>
       <nav class="navbar">
         <div class="nav-left">
-          <a href="/dashboard" class="brand">Expense Tracker</a>
+          <a href="/dashboard" class="brand">Shared Expense Tracker</a>
         </div>
 
         <div class="nav-right">
           {% if current_user and current_user.role == "admin" %}
           <a href="/admin/create-user" class="btn primary"> Create User </a>
           {% endif %} {% if current_user %}
-          <span class="user-name">{{ current_user.name }}</span>
+          <span class="user-name">Loged User: {{ current_user.name }}</span>
           <a href="/logout" class="btn logout">Logout</a>
           {% endif %}
         </div>

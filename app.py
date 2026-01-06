@@ -126,34 +126,6 @@ def calculate_balances(group_id):
         balances[s.receiver_id] -= s.amount
 
     return balances
-@app.route("/settlements/add", methods=["POST"])
-def add_settlement_form():
-    if "user_id" not in session:
-        return redirect("/login")
-
-    group_id = int(request.form["group_id"])
-    payer_id = int(request.form["payer_id"])
-    receiver_id = int(request.form["receiver_id"])
-    amount = float(request.form["amount"])
-
-    # Sanity checks
-    if payer_id == receiver_id or amount <= 0:
-        return redirect(f"/groups/{group_id}")
-
-    new_settlement = Settlement(
-        group_id=group_id,
-        payer_id=payer_id,
-        receiver_id=receiver_id,
-        amount=amount
-    )
-
-    db.session.add(new_settlement)
-    db.session.commit()
-
-    return redirect(f"/groups/{group_id}")
-
-
-
 
 def balance_integrity_ok(balances):
     return abs(sum(balances.values())) < 0.01
@@ -376,7 +348,7 @@ def login_page():
 
     return render_template("login.html")
 
-@app.route("/admin/users/new", methods=["GET", "POST"])
+@app.route("/admin/create-user", methods=["GET", "POST"])
 def create_user():
     if not admin_required():
         return redirect("/dashboard")
@@ -604,7 +576,24 @@ def group_page(group_id):
             "to_name": User.query.get(s["to"]).name,
             "amount": s["amount"]
         })
+        
+    settlements = (
+        Settlement.query
+        .filter_by(group_id=group_id)
+        .order_by(Settlement.created_at.desc())
+        .all()
+    )
 
+    settlement_data = []
+    for s in settlements:
+        payer = User.query.get(s.payer_id)
+        receiver = User.query.get(s.receiver_id)
+        settlement_data.append({
+            "amount": s.amount,
+            "payer_name": payer.name,
+            "receiver_name": receiver.name,
+            "created_at": s.created_at
+    })
 
     return render_template(
         "group.html",
@@ -612,7 +601,8 @@ def group_page(group_id):
         balances=balances,
         members=members,
         expenses=expense_data,
-        suggestions=suggestions
+        suggestions=suggestions,
+        settlements=settlement_data 
     )
 
 @app.route("/expenses/add", methods=["POST"])
@@ -688,6 +678,32 @@ def suggest_settlements(group_id):
             j += 1
 
     return suggestions
+
+@app.route("/settlements/add", methods=["POST"])
+def add_settlement_form():
+    if "user_id" not in session:
+        return redirect("/login")
+
+    group_id = int(request.form["group_id"])
+    payer_id = int(request.form["payer_id"])
+    receiver_id = int(request.form["receiver_id"])
+    amount = float(request.form["amount"])
+
+    # Sanity checks
+    if payer_id == receiver_id or amount <= 0:
+        return redirect(f"/groups/{group_id}")
+
+    new_settlement = Settlement(
+        group_id=group_id,
+        payer_id=payer_id,
+        receiver_id=receiver_id,
+        amount=amount
+    )
+
+    db.session.add(new_settlement)
+    db.session.commit()
+
+    return redirect(f"/groups/{group_id}")
 
 
 

@@ -22,9 +22,11 @@
 <!-- MEMBERS LIST -->
 <div class="card">
   <h3>Members</h3>
-  <ul>
+  <ul class="member-list">
     {% for m in members %}
-    <li>{{ m.name }} ({{ m.email }})</li>
+    <li class="member-item">
+      <strong class="member-name">{{ m.name }}</strong>
+    </li>
     {% endfor %}
   </ul>
 </div>
@@ -35,7 +37,7 @@
   <div class="balance-grid">
     {% for b in balances %}
     <div
-      class="balance {% if b.balance > 0 %}positive{% elif b.balance < 0 %}negative{% endif %}"
+      class="balance {% if b.balance == 0 %}zero{% elif b.balance > 0 %}positive{% elif b.balance < 0 %}negative{% endif %}"
     >
       <strong>{{ b.name }}</strong>
       <p>₹{{ b.balance | abs }}</p>
@@ -50,42 +52,41 @@
 
 {% if suggestions %}
 <div class="card">
-    <h3>Suggested Settlements</h3>
+  <h3>Suggested Settlements</h3>
 
-    {% for s in suggestions %}
-    <div class="suggested-settlement">
-        <div class="settlement-row">
-            <span class="label">From</span>
-            <span class="value">{{ s.from_name }}</span>
-        </div>
-
-        <div class="settlement-row">
-            <span class="label">To</span>
-            <span class="value">{{ s.to_name }}</span>
-        </div>
-
-        <div class="settlement-row">
-            <span class="label">Amount</span>
-            <span class="amount">₹{{ s.amount }}</span>
-        </div>
-
-        <div class="settlement-note">
-            Recommended settlement to balance accounts
-        </div>
+  {% for s in suggestions %}
+  <div class="suggested-settlement">
+    <div class="settlement-row">
+      <span class="label">From</span>
+      <span class="value">{{ s.from_name }}</span>
     </div>
-    {% endfor %}
+
+    <div class="settlement-row">
+      <span class="label">To</span>
+      <span class="value">{{ s.to_name }}</span>
+    </div>
+
+    <div class="settlement-row">
+      <span class="label">Amount</span>
+      <span class="amount">₹{{ s.amount }}</span>
+    </div>
+
+    <div class="settlement-note">
+      Recommended settlement to balance accounts
+    </div>
+  </div>
+  {% endfor %}
 </div>
 {% endif %}
 
-
-
-<!-- ADD EXPENSE -->
+<!-- ADD EXPENSE + RECORD SETTLEMENT -->
 <div class="two-col">
+
+  <!-- ADD EXPENSE -->
   <div class="card">
     <h3>Add Expense</h3>
 
     <form method="post" action="/expenses/add">
-      <!-- IMPORTANT: group_id -->
       <input type="hidden" name="group_id" value="{{ group.id }}" />
 
       <input name="amount" placeholder="Amount" required />
@@ -94,7 +95,7 @@
       <select name="paid_by" required>
         <option value="">Paid by</option>
         {% for m in members %}
-        <option value="{{ m.id }}">{{ m.name }}</option>
+          <option value="{{ m.id }}">{{ m.name }}</option>
         {% endfor %}
       </select>
 
@@ -102,7 +103,7 @@
     </form>
   </div>
 
-  <!-- SETTLEMENT -->
+  <!-- RECORD SETTLEMENT -->
   <div class="card">
     <h3>Record Settlement</h3>
 
@@ -113,7 +114,7 @@
       <select name="payer_id" required>
         <option value="">Select payer</option>
         {% for m in members %}
-        <option value="{{ m.id }}">{{ m.name }}</option>
+          <option value="{{ m.id }}">{{ m.name }}</option>
         {% endfor %}
       </select>
 
@@ -121,42 +122,56 @@
       <select name="receiver_id" required>
         <option value="">Select receiver</option>
         {% for m in members %}
-        <option value="{{ m.id }}">{{ m.name }}</option>
+          <option value="{{ m.id }}">{{ m.name }}</option>
         {% endfor %}
       </select>
 
       <input name="amount" placeholder="Amount" required />
 
       <button class="btn success">Record Settlement</button>
-      <p style="font-size: 12px; color: #6f6f6f">
+
+      <p style="font-size:12px;color:#6f6f6f">
         You can only settle up to the amount owed.
       </p>
     </form>
   </div>
 
+</div> <!-- ✅ END first two-col -->
+
+
+<!-- SETTLEMENT HISTORY + RECENT EXPENSES -->
+<div class="two-col">
+
+  <!-- SETTLEMENT HISTORY -->
   <div class="card">
     <h3>Settlement History</h3>
 
-    {% if settlements %} {% for s in settlements %}
-    <div class="row">
-      ₹{{ s.amount }} — {{ s.payer_name }} → {{ s.receiver_name }}
-      <small>{{ s.created_at }}</small>
-    </div>
-    {% endfor %} {% else %}
-    <p>No settlements yet.</p>
-    {% endif %}
+    {% for s in settlements %}
+      <div class="row">
+        <span class="settlement-amount">₹{{ s.amount }}</span>
+        {{ s.payer_name }} → {{ s.receiver_name }}
+        <small>{{ s.created_at.strftime("%d %b %Y") }}</small>
+      </div>
+    {% else %}
+      <p class="muted">No settlements yet.</p>
+    {% endfor %}
   </div>
-</div>
 
-<!-- RECENT EXPENSES -->
-<div class="card">
-  <h3>Recent Expenses</h3>
-  {% for e in expenses %}
-  <div class="row">
-    ₹{{ e.amount }} — {{ e.description or "No description" }}
-    <small>Paid by {{ e.payer_name }}</small>
+  <!-- RECENT EXPENSES -->
+  <div class="card">
+    <h3>Recent Expenses</h3>
+
+    {% for e in expenses %}
+      <div class="row">
+        <span class="recent-expense-amount">₹{{ e.amount }}</span> - {{ e.description or "No description" }}
+        <small>Paid by {{ e.payer_name }}</small>
+      </div>
+    {% else %}
+      <p class="muted">No expenses yet.</p>
+    {% endfor %}
   </div>
-  {% endfor %}
-</div>
 
-{% endblock %}
+</div> <!-- ✅ END second two-col -->
+
+  {% endblock %}
+</div>
