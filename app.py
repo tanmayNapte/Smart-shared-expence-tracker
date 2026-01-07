@@ -374,21 +374,6 @@ def login_page():
 
     return render_template("login.html")
 
-@app.route("/_reset_expense_db")
-def reset_expense_db():
-    from sqlalchemy import text
-
-    db.session.execute(text("DROP TABLE IF EXISTS settlements CASCADE"))
-    db.session.execute(text("DROP TABLE IF EXISTS expense_splits CASCADE"))
-    db.session.execute(text("DROP TABLE IF EXISTS expenses CASCADE"))
-    db.session.execute(text("DROP TABLE IF EXISTS group_members CASCADE"))
-    db.session.execute(text("DROP TABLE IF EXISTS groups CASCADE"))
-    db.session.execute(text("DROP TABLE IF EXISTS expense_users CASCADE"))
-    db.session.commit()
-
-    db.create_all()
-    return "Expense DB reset done"
-
 
 @app.route("/admin/create-user", methods=["GET", "POST"])
 def create_user():
