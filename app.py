@@ -140,7 +140,7 @@ def promote_first_user_to_admin():
     # Check if an admin already exists
     admin_exists = db.session.execute(
         select(User).where(User.role == "admin")
-    ).scalar_one_or_none()
+    ).first()
 
     if admin_exists:
         return  # Do nothing if admin already exists
