@@ -134,6 +134,27 @@ def calculate_balances(group_id):
 def balance_integrity_ok(balances):
     return abs(sum(balances.values())) < 0.01
 
+from sqlalchemy import select
+
+def promote_first_user_to_admin():
+    # Check if an admin already exists
+    admin_exists = db.session.execute(
+        select(User).where(User.role == "admin")
+    ).scalar_one_or_none()
+
+    if admin_exists:
+        return  # Do nothing if admin already exists
+
+    # Get the first user (lowest id)
+    first_user = db.session.execute(
+        select(User).order_by(User.id)
+    ).scalar_one_or_none()
+
+    if first_user:
+        first_user.role = "admin"
+        db.session.commit()
+
+
 # --------------------------------------------------
 # AUTH
 # --------------------------------------------------
@@ -347,6 +368,9 @@ def login_page():
             return redirect("/login")
 
         session["user_id"] = user.id
+        
+        promote_first_user_to_admin()
+        
         flash("Logged in successfully", "success")
         return redirect("/dashboard")
 
