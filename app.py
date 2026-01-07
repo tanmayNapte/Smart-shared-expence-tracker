@@ -369,6 +369,8 @@ def login_page():
 
         session["user_id"] = user.id
         
+        promote_first_user_to_admin(user)
+        
         flash("Logged in successfully", "success")
         return redirect("/dashboard")
 
