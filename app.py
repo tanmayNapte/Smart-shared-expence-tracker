@@ -44,7 +44,7 @@ class Group(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    created_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
 
 
 class GroupMember(db.Model):
@@ -52,7 +52,7 @@ class GroupMember(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
 
 
 class Expense(db.Model):
@@ -62,7 +62,7 @@ class Expense(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
     amount = db.Column(db.Float, nullable=False)
     description = db.Column(db.String(255))
-    paid_by = db.Column(db.Integer, db.ForeignKey("users.id"))
+    paid_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 
@@ -71,7 +71,7 @@ class ExpenseSplit(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    user_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
     amount_owed = db.Column(db.Float, nullable=False)
 
 
@@ -80,8 +80,8 @@ class Settlement(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
-    payer_id = db.Column(db.Integer, db.ForeignKey("users.id"))
-    receiver_id = db.Column(db.Integer, db.ForeignKey("users.id"))
+    payer_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
+    receiver_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
     amount = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
