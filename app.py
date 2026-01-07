@@ -140,7 +140,7 @@ def promote_first_user_to_admin():
     # Check if an admin already exists
     admin_exists = db.session.execute(
         select(User).where(User.role == "admin")
-    ).first()
+    ).scalar_one_or_none()
 
     if admin_exists:
         return  # Do nothing if admin already exists
@@ -148,7 +148,7 @@ def promote_first_user_to_admin():
     # Get the first user (lowest id)
     first_user = db.session.execute(
         select(User).order_by(User.id)
-    ).scalar_one_or_none()
+    ).first()
 
     if first_user:
         first_user.role = "admin"
