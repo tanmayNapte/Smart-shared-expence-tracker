@@ -31,7 +31,7 @@ db = SQLAlchemy(app)
 # --------------------------------------------------
 
 class User(db.Model):
-    __tablename__ = "users"
+    __tablename__ = "expense_users"
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100))
     email = db.Column(db.String(120), unique=True)
@@ -92,14 +92,10 @@ class Settlement(db.Model):
 @app.context_processor
 def inject_current_user():
     if "user_id" in session:
-        user = User.query.get(session["user_id"])
+        user = db.session.get(User, session["user_id"])
         return {"current_user": user}
     return {"current_user": None}
 
-
-
-with app.app_context():
-    db.create_all()
 
 # --------------------------------------------------
 # HELPERS
@@ -108,8 +104,9 @@ with app.app_context():
 def admin_required():
     if "user_id" not in session:
         return False
-    user = User.query.get(session["user_id"])
+    user = db.session.get(User, session["user_id"])
     return user and user.role == "admin"
+
 
 
 def calculate_balances(group_id):
@@ -724,6 +721,10 @@ def logout():
 # --------------------------------------------------
 # RUN
 # --------------------------------------------------
+
+with app.app_context():
+    db.create_all()
+    
 if __name__ == "__main__":
     # Get port from environment or default to 5000 for local dev
     port = int(os.environ.get("PORT", 5000))
