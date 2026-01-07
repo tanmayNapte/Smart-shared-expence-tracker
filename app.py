@@ -136,23 +136,17 @@ def balance_integrity_ok(balances):
 
 from sqlalchemy import select
 
-def promote_first_user_to_admin():
-    # Check if an admin already exists
+def promote_first_user_to_admin(user):
+    # check if ANY admin exists (do NOT use scalar_one_or_none)
     admin_exists = db.session.execute(
-        select(User).where(User.role == "admin")
-    ).scalar_one_or_none()
-
-    if admin_exists:
-        return  # Do nothing if admin already exists
-
-    # Get the first user (lowest id)
-    first_user = db.session.execute(
-        select(User).order_by(User.id)
+        select(User.id).where(User.role == "admin")
     ).first()
 
-    if first_user:
-        first_user.role = "admin"
-        db.session.commit()
+    if admin_exists:
+        return
+
+    user.role = "admin"
+    db.session.commit()
 
 
 # --------------------------------------------------
