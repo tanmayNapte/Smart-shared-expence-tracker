@@ -1,4 +1,4 @@
-/* ---------- RESET ---------- */
+
 * {
     box-sizing: border-box;
 }
@@ -68,12 +68,12 @@ a {
 }
 
 .btn.success {
-    background: #6b4f3f;
+    background: #442525;
     color: #ffffff;
 }
 
 .btn.success:hover {
-    background: #5a4033;
+    background: #000000;
 }
 
 .btn.logout {
@@ -133,7 +133,7 @@ h2,
 h3 {
     font-family: "Playfair Display", serif;
     font-weight: 600;
-    color: #2f3e34;
+    color: #000000;
     margin-top: 0;
 }
 
@@ -294,16 +294,29 @@ li {
 }
 
 .brand {
-    font-family: "Playfair Display", serif;
-    font-size: 20px;
-    font-weight: 600;
-    color: #2f3e34;
+    display: flex;
+    align-items: center;
+    gap: 10px;
     text-decoration: none;
-    transition: color 0.2s ease;
 }
 
+.brand-logo {
+    height: 32px;
+    width: auto;
+    display: block;
+}
+
+.brand-text {
+    font-family: "Playfair Display", serif;
+    font-size: 30px;   /* bigger, authoritative */
+    font-weight: 700;
+    line-height: 1;
+    color: #2f3e34;
+}
+
+
 .brand:hover {
-    color: #6b4f3f;
+    color: #493c34;
 }
 
 .user-name {
@@ -555,6 +568,8 @@ li {
     background-color: #b8a898;
 }
 
+
+
 /* ---------- SUGGESTED SETTLEMENT ---------- */
 .suggested-settlement {
     background: #fffdf8;
@@ -707,8 +722,15 @@ li {
     }
 
     h3 {
+        color: #000000;
         font-size: 16px;
     }
+}
+
+.muted {
+    color: #2f3e34;
+    font-size: 15px;
+    font-style: italic;
 }
 
 @media (max-width: 768px) {
