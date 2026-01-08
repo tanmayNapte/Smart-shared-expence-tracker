@@ -1,16 +1,15 @@
-from flask import Flask, request, jsonify, session, render_template, redirect, url_for,flash
+from flask import Flask, request, jsonify, session, render_template, redirect, url_for, flash
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from dotenv import load_dotenv
 from datetime import datetime
 import os
-from sqlalchemy import or_
+from sqlalchemy import or_, select
 
 # --------------------------------------------------
 # APP SETUP
 # --------------------------------------------------
 
-# Update this section in app.py
 load_dotenv()
 
 app = Flask(__name__)
@@ -86,7 +85,7 @@ class Settlement(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
 # --------------------------------------------------
-# INIT (DEV ONLY)
+# CONTEXT PROCESSOR
 # --------------------------------------------------
 
 @app.context_processor
@@ -106,7 +105,6 @@ def admin_required():
         return False
     user = db.session.get(User, session["user_id"])
     return user and user.role == "admin"
-
 
 
 def calculate_balances(group_id):
@@ -131,53 +129,124 @@ def calculate_balances(group_id):
 
     return balances
 
+
 def balance_integrity_ok(balances):
     return abs(sum(balances.values())) < 0.01
 
-from sqlalchemy import select
 
-def promote_first_user_to_admin(user):
-    # check if ANY admin exists (do NOT use scalar_one_or_none)
-    admin_exists = db.session.execute(
-        select(User.id).where(User.role == "admin")
-    ).first()
+def promote_first_user_to_admin():
+    """Promote the first registered user to admin if no admin exists."""
+    try:
+        # Check if ANY admin exists
+        admin_exists = db.session.execute(
+            select(User.id).where(User.role == "admin")
+        ).first()
 
-    if admin_exists:
-        return
+        if admin_exists:
+            return
 
-    user.role = "admin"
-    db.session.commit()
+        # Get the first user (oldest by ID)
+        first_user = db.session.execute(
+            select(User).order_by(User.id)
+        ).first()
+
+        if first_user:
+            user = first_user[0]  # Extract user from result tuple
+            user.role = "admin"
+            db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error promoting user to admin: {e}")
+
+
+def suggest_settlements(group_id):
+    """Suggest optimal settlements to minimize transactions."""
+    balances = calculate_balances(group_id)
+
+    creditors = []
+    debtors = []
+
+    for user_id, balance in balances.items():
+        if balance > 0.01:  # Small threshold to avoid floating point issues
+            creditors.append([user_id, balance])
+        elif balance < -0.01:
+            debtors.append([user_id, -balance])
+
+    creditors.sort(key=lambda x: x[1], reverse=True)
+    debtors.sort(key=lambda x: x[1], reverse=True)
+
+    suggestions = []
+
+    i = j = 0
+    while i < len(debtors) and j < len(creditors):
+        debtor_id, debtor_amt = debtors[i]
+        creditor_id, creditor_amt = creditors[j]
+
+        settle_amt = min(debtor_amt, creditor_amt)
+
+        suggestions.append({
+            "from": debtor_id,
+            "to": creditor_id,
+            "amount": round(settle_amt, 2)
+        })
+
+        debtors[i][1] -= settle_amt
+        creditors[j][1] -= settle_amt
+
+        if debtors[i][1] < 0.01:  # Essentially zero
+            i += 1
+        if creditors[j][1] < 0.01:  # Essentially zero
+            j += 1
+
+    return suggestions
 
 
 # --------------------------------------------------
-# AUTH
+# AUTH API
 # --------------------------------------------------
 
 @app.route("/api/auth/register", methods=["POST"])
 def register():
-    data = request.json
-    hashed = generate_password_hash(data["password"])
+    try:
+        data = request.json
+        
+        # Check if user already exists
+        if User.query.filter_by(email=data["email"]).first():
+            return jsonify({"error": "Email already registered"}), 400
+        
+        hashed = generate_password_hash(data["password"])
 
-    user = User(
-        name=data["name"],
-        email=data["email"],
-        password=hashed
-    )
+        user = User(
+            name=data["name"],
+            email=data["email"],
+            password=hashed
+        )
 
-    db.session.add(user)
-    db.session.commit()
-    return jsonify({"id": user.id, "name": user.name, "email": user.email})
+        db.session.add(user)
+        db.session.commit()
+        
+        return jsonify({"id": user.id, "name": user.name, "email": user.email})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Registration failed"}), 500
 
 
 @app.route("/api/auth/login", methods=["POST"])
 def login():
-    data = request.json
-    user = User.query.filter_by(email=data["email"]).first()
+    try:
+        data = request.json
+        user = User.query.filter_by(email=data["email"]).first()
 
-    if not user or not check_password_hash(user.password, data["password"]):
-        return jsonify({"error": "Invalid credentials"}), 401
+        if not user or not check_password_hash(user.password, data["password"]):
+            return jsonify({"error": "Invalid credentials"}), 401
 
-    return jsonify({"id": user.id, "name": user.name, "email": user.email})
+        # Set session for API login as well
+        session["user_id"] = user.id
+        
+        return jsonify({"id": user.id, "name": user.name, "email": user.email})
+    except Exception as e:
+        return jsonify({"error": "Login failed"}), 500
+
 
 # --------------------------------------------------
 # USERS
@@ -185,8 +254,12 @@ def login():
 
 @app.route("/api/users")
 def all_users():
-    users = User.query.all()
-    return jsonify([{"id": u.id, "name": u.name, "email": u.email} for u in users])
+    try:
+        users = User.query.all()
+        return jsonify([{"id": u.id, "name": u.name, "email": u.email} for u in users])
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch users"}), 500
+
 
 # --------------------------------------------------
 # GROUPS
@@ -194,46 +267,56 @@ def all_users():
 
 @app.route("/api/groups", methods=["POST"])
 def create_group():
-    data = request.json
-    group = Group(name=data["name"], created_by=data["creator_id"])
-    db.session.add(group)
-    db.session.commit()
+    try:
+        data = request.json
+        group = Group(name=data["name"], created_by=data["creator_id"])
+        db.session.add(group)
+        db.session.commit()
 
-    for uid in data["member_ids"]:
-        db.session.add(GroupMember(group_id=group.id, user_id=uid))
+        for uid in data["member_ids"]:
+            db.session.add(GroupMember(group_id=group.id, user_id=uid))
 
-    db.session.commit()
-    return jsonify({"group_id": group.id})
+        db.session.commit()
+        return jsonify({"group_id": group.id})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Failed to create group"}), 500
 
 
 @app.route("/api/groups/<int:user_id>")
 def user_groups(user_id):
-    groups = (
-        db.session.query(Group)
-        .join(GroupMember, Group.id == GroupMember.group_id)
-        .filter(GroupMember.user_id == user_id)
-        .all()
-    )
+    try:
+        groups = (
+            db.session.query(Group)
+            .join(GroupMember, Group.id == GroupMember.group_id)
+            .filter(GroupMember.user_id == user_id)
+            .all()
+        )
 
-    result = []
-    for g in groups:
-        count = GroupMember.query.filter_by(group_id=g.id).count()
-        result.append({"id": g.id, "name": g.name, "member_count": count})
+        result = []
+        for g in groups:
+            count = GroupMember.query.filter_by(group_id=g.id).count()
+            result.append({"id": g.id, "name": g.name, "member_count": count})
 
-    return jsonify(result)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch groups"}), 500
 
 
 @app.route("/api/groups/<int:group_id>/members")
 def group_members(group_id):
-    members = (
-        db.session.query(User)
-        .join(GroupMember, User.id == GroupMember.user_id)
-        .filter(GroupMember.group_id == group_id)
+    try:
+        members = (
+            db.session.query(User)
+            .join(GroupMember, User.id == GroupMember.user_id)
+            .filter(GroupMember.group_id == group_id)
+            .all()
+        )
 
-        .all()
-    )
+        return jsonify([{"id": u.id, "name": u.name} for u in members])
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch members"}), 500
 
-    return jsonify([{"id": u.id, "name": u.name} for u in members])
 
 # --------------------------------------------------
 # EXPENSES
@@ -241,47 +324,56 @@ def group_members(group_id):
 
 @app.route("/api/expenses", methods=["POST"])
 def add_expense():
-    data = request.json
+    try:
+        data = request.json
 
-    expense = Expense(
-        group_id=data["group_id"],
-        amount=data["amount"],
-        description=data.get("description"),
-        paid_by=data["paid_by"]
-    )
-
-    db.session.add(expense)
-    db.session.commit()
-
-    for uid, amt in data["splits"].items():
-        db.session.add(
-            ExpenseSplit(
-                expense_id=expense.id,
-                user_id=int(uid),
-                amount_owed=amt
-            )
+        expense = Expense(
+            group_id=data["group_id"],
+            amount=data["amount"],
+            description=data.get("description"),
+            paid_by=data["paid_by"]
         )
 
-    db.session.commit()
-    return jsonify({"status": "expense added"})
+        db.session.add(expense)
+        db.session.commit()
+
+        for uid, amt in data["splits"].items():
+            db.session.add(
+                ExpenseSplit(
+                    expense_id=expense.id,
+                    user_id=int(uid),
+                    amount_owed=amt
+                )
+            )
+
+        db.session.commit()
+        return jsonify({"status": "expense added"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Failed to add expense"}), 500
 
 
 @app.route("/api/expenses/<int:group_id>")
 def list_expenses(group_id):
-    expenses = Expense.query.filter_by(group_id=group_id).order_by(Expense.created_at.desc()).all()
-    result = []
+    try:
+        expenses = Expense.query.filter_by(group_id=group_id).order_by(Expense.created_at.desc()).all()
+        result = []
 
-    for e in expenses:
-        payer = User.query.get(e.paid_by)
-        result.append({
-            "id": e.id,
-            "amount": e.amount,
-            "description": e.description,
-            "payer_name": payer.name,
-            "created_at": e.created_at.isoformat()
-        })
+        for e in expenses:
+            payer = User.query.get(e.paid_by)
+            if payer:
+                result.append({
+                    "id": e.id,
+                    "amount": e.amount,
+                    "description": e.description,
+                    "payer_name": payer.name,
+                    "created_at": e.created_at.isoformat()
+                })
 
-    return jsonify(result)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch expenses"}), 500
+
 
 # --------------------------------------------------
 # BALANCES
@@ -289,17 +381,22 @@ def list_expenses(group_id):
 
 @app.route("/api/balances/<int:group_id>")
 def balances(group_id):
-    balances = calculate_balances(group_id)
+    try:
+        balances = calculate_balances(group_id)
 
-    if not balance_integrity_ok(balances):
-        return jsonify({"error": "Balance integrity violated"}), 500
+        if not balance_integrity_ok(balances):
+            return jsonify({"error": "Balance integrity violated"}), 500
 
-    result = []
-    for uid, bal in balances.items():
-        user = User.query.get(uid)
-        result.append({"user_id": uid, "name": user.name, "balance": round(bal, 2)})
+        result = []
+        for uid, bal in balances.items():
+            user = User.query.get(uid)
+            if user:
+                result.append({"user_id": uid, "name": user.name, "balance": round(bal, 2)})
 
-    return jsonify(result)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": "Failed to calculate balances"}), 500
+
 
 # --------------------------------------------------
 # SETTLEMENTS
@@ -307,37 +404,46 @@ def balances(group_id):
 
 @app.route("/api/settlements", methods=["POST"])
 def add_settlement():
-    data = request.json
+    try:
+        data = request.json
 
-    settlement = Settlement(
-        group_id=data["group_id"],
-        payer_id=data["payer_id"],
-        receiver_id=data["receiver_id"],
-        amount=data["amount"]
-    )
+        settlement = Settlement(
+            group_id=data["group_id"],
+            payer_id=data["payer_id"],
+            receiver_id=data["receiver_id"],
+            amount=data["amount"]
+        )
 
-    db.session.add(settlement)
-    db.session.commit()
-    return jsonify({"status": "settlement recorded"})
+        db.session.add(settlement)
+        db.session.commit()
+        return jsonify({"status": "settlement recorded"})
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": "Failed to record settlement"}), 500
 
 
 @app.route("/api/settlements/<int:group_id>")
 def list_settlements(group_id):
-    settlements = Settlement.query.filter_by(group_id=group_id).order_by(Settlement.created_at.desc()).all()
-    result = []
+    try:
+        settlements = Settlement.query.filter_by(group_id=group_id).order_by(Settlement.created_at.desc()).all()
+        result = []
 
-    for s in settlements:
-        payer = User.query.get(s.payer_id)
-        receiver = User.query.get(s.receiver_id)
-        result.append({
-            "id": s.id,
-            "amount": s.amount,
-            "payer_name": payer.name,
-            "receiver_name": receiver.name,
-            "created_at": s.created_at.isoformat()
-        })
+        for s in settlements:
+            payer = User.query.get(s.payer_id)
+            receiver = User.query.get(s.receiver_id)
+            if payer and receiver:
+                result.append({
+                    "id": s.id,
+                    "amount": s.amount,
+                    "payer_name": payer.name,
+                    "receiver_name": receiver.name,
+                    "created_at": s.created_at.isoformat()
+                })
 
-    return jsonify(result)
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"error": "Failed to fetch settlements"}), 500
+
 
 # --------------------------------------------------
 # HTML Routes
@@ -374,6 +480,7 @@ def login_page():
 @app.route("/admin/create-user", methods=["GET", "POST"])
 def create_user():
     if not admin_required():
+        flash("Admin access required", "error")
         return redirect("/dashboard")
 
     if request.method == "POST":
@@ -387,17 +494,25 @@ def create_user():
                 error="User already exists"
             )
 
-        user = User(
-            name=name,
-            email=email,
-            password=generate_password_hash(password),
-            role="user"
-        )
+        try:
+            user = User(
+                name=name,
+                email=email,
+                password=generate_password_hash(password),
+                role="user"
+            )
 
-        db.session.add(user)
-        db.session.commit()
-
-        return redirect("/dashboard")
+            db.session.add(user)
+            db.session.commit()
+            
+            flash("User created successfully", "success")
+            return redirect("/dashboard")
+        except Exception as e:
+            db.session.rollback()
+            return render_template(
+                "create_user.html",
+                error="Failed to create user"
+            )
 
     return render_template("create_user.html")
 
@@ -405,16 +520,35 @@ def create_user():
 @app.route("/register", methods=["GET", "POST"])
 def register_page():
     if request.method == "POST":
+        email = request.form["email"]
+
+        # Check before insert
+        if User.query.filter_by(email=email).first():
+            return render_template(
+                "register.html",
+                error="Email already registered"
+            )
+
         user = User(
             name=request.form["name"],
-            email=request.form["email"],
+            email=email,
             password=generate_password_hash(request.form["password"])
         )
-        db.session.add(user)
-        db.session.commit()
-        return redirect("/login")
+
+        try:
+            db.session.add(user)
+            db.session.commit()
+            flash("Registration successful! Please log in.", "success")
+            return redirect("/login")
+        except Exception as e:
+            db.session.rollback()
+            return render_template(
+                "register.html",
+                error="Registration failed"
+            )
 
     return render_template("register.html")
+
 
 @app.route("/dashboard")
 def dashboard():
@@ -447,6 +581,7 @@ def dashboard():
 
     return render_template("dashboard.html", groups=result)
 
+
 @app.route("/groups/new", methods=["GET", "POST"])
 def new_group():
     if "user_id" not in session:
@@ -461,7 +596,7 @@ def new_group():
 
     # POST → create group
     group_name = request.form.get("name")
-    member_ids = request.form.getlist("members")  # optional
+    member_ids = request.form.getlist("members")
 
     if not group_name:
         users = User.query.filter(User.id != current_user_id).all()
@@ -471,24 +606,34 @@ def new_group():
             error="Group name is required"
         )
 
-    # Create group
-    group = Group(name=group_name, created_by=current_user_id)
-    db.session.add(group)
-    db.session.commit()
+    try:
+        # Create group
+        group = Group(name=group_name, created_by=current_user_id)
+        db.session.add(group)
+        db.session.commit()
 
-    # Always add creator
-    db.session.add(
-        GroupMember(group_id=group.id, user_id=current_user_id)
-    )
-
-    # Add selected members (if any)
-    for uid in member_ids:
+        # Always add creator
         db.session.add(
-            GroupMember(group_id=group.id, user_id=int(uid))
+            GroupMember(group_id=group.id, user_id=current_user_id)
         )
 
-    db.session.commit()
-    return redirect("/dashboard")
+        # Add selected members
+        for uid in member_ids:
+            db.session.add(
+                GroupMember(group_id=group.id, user_id=int(uid))
+            )
+
+        db.session.commit()
+        flash("Group created successfully", "success")
+        return redirect("/dashboard")
+    except Exception as e:
+        db.session.rollback()
+        users = User.query.filter(User.id != current_user_id).all()
+        return render_template(
+            "create_group.html",
+            users=users,
+            error="Failed to create group"
+        )
 
 
 @app.route("/groups/<int:group_id>/members", methods=["GET", "POST"])
@@ -505,7 +650,8 @@ def add_members(group_id):
     ).first()
 
     if not is_member:
-        return "Unauthorized", 403
+        flash("You must be a member of this group", "error")
+        return redirect("/dashboard")
 
     group = Group.query.get_or_404(group_id)
 
@@ -537,14 +683,23 @@ def add_members(group_id):
             error="Select at least one user"
         )
 
-    for uid in member_ids:
-        db.session.add(
-            GroupMember(group_id=group_id, user_id=int(uid))
+    try:
+        for uid in member_ids:
+            db.session.add(
+                GroupMember(group_id=group_id, user_id=int(uid))
+            )
+
+        db.session.commit()
+        flash("Members added successfully", "success")
+        return redirect(f"/groups/{group_id}")
+    except Exception as e:
+        db.session.rollback()
+        return render_template(
+            "add_members.html",
+            group=group,
+            users=available_users,
+            error="Failed to add members"
         )
-
-    db.session.commit()
-    return redirect(f"/groups/{group_id}")
-
 
 
 @app.route("/groups/<int:group_id>")
@@ -559,7 +714,8 @@ def group_page(group_id):
     ).first()
 
     if not member:
-        return "Unauthorized", 403
+        flash("You don't have access to this group", "error")
+        return redirect("/dashboard")
 
     group = Group.query.get_or_404(group_id)
 
@@ -567,10 +723,12 @@ def group_page(group_id):
     balances = []
     for uid, bal in balances_raw.items():
         user = User.query.get(uid)
-        balances.append({
-            "name": user.name,
-            "balance": round(bal, 2)
-        })
+        if user:
+            balances.append({
+                "user_id": uid,  # Added for settlement form
+                "name": user.name,
+                "balance": round(bal, 2)
+            })
 
     members = (
         db.session.query(User)
@@ -584,21 +742,28 @@ def group_page(group_id):
     expense_data = []
     for e in expenses:
         payer = User.query.get(e.paid_by)
-        expense_data.append({
-            "amount": e.amount,
-            "description": e.description,
-            "payer_name": payer.name
-        })
+        if payer:
+            expense_data.append({
+                "amount": e.amount,
+                "description": e.description,
+                "payer_name": payer.name,
+                "created_at": e.created_at
+            })
         
     suggestions_raw = suggest_settlements(group_id)
 
     suggestions = []
     for s in suggestions_raw:
-        suggestions.append({
-            "from_name": User.query.get(s["from"]).name,
-            "to_name": User.query.get(s["to"]).name,
-            "amount": s["amount"]
-        })
+        from_user = User.query.get(s["from"])
+        to_user = User.query.get(s["to"])
+        if from_user and to_user:
+            suggestions.append({
+                "from_id": s["from"],
+                "from_name": from_user.name,
+                "to_id": s["to"],
+                "to_name": to_user.name,
+                "amount": s["amount"]
+            })
         
     settlements = (
         Settlement.query
@@ -611,12 +776,13 @@ def group_page(group_id):
     for s in settlements:
         payer = User.query.get(s.payer_id)
         receiver = User.query.get(s.receiver_id)
-        settlement_data.append({
-            "amount": s.amount,
-            "payer_name": payer.name,
-            "receiver_name": receiver.name,
-            "created_at": s.created_at
-    })
+        if payer and receiver:
+            settlement_data.append({
+                "amount": s.amount,
+                "payer_name": payer.name,
+                "receiver_name": receiver.name,
+                "created_at": s.created_at
+            })
 
     return render_template(
         "group.html",
@@ -625,116 +791,104 @@ def group_page(group_id):
         members=members,
         expenses=expense_data,
         suggestions=suggestions,
-        settlements=settlement_data 
+        settlements=settlement_data
     )
+
 
 @app.route("/expenses/add", methods=["POST"])
 def add_expense_form():
     if "user_id" not in session:
         return redirect("/login")
 
-    group_id = int(request.form["group_id"])
-    amount = float(request.form["amount"])
-    paid_by = int(request.form["paid_by"])
-    description = request.form.get("description")
+    try:
+        group_id = int(request.form["group_id"])
+        amount = float(request.form["amount"])
+        paid_by = int(request.form["paid_by"])
+        description = request.form.get("description", "")
 
-    expense = Expense(
-        group_id=group_id,
-        amount=amount,
-        paid_by=paid_by,
-        description=description
-    )
-    db.session.add(expense)
-    db.session.commit()
+        # Validate amount
+        if amount <= 0:
+            flash("Amount must be greater than zero", "error")
+            return redirect(f"/groups/{group_id}")
 
-    members = GroupMember.query.filter_by(group_id=group_id).all()
-    split_amount = amount / len(members)
-
-    for m in members:
-        db.session.add(
-            ExpenseSplit(
-                expense_id=expense.id,
-                user_id=m.user_id,
-                amount_owed=split_amount
-            )
+        expense = Expense(
+            group_id=group_id,
+            amount=amount,
+            paid_by=paid_by,
+            description=description
         )
+        db.session.add(expense)
+        db.session.commit()
 
-    db.session.commit()
-    return redirect(f"/groups/{group_id}")
+        members = GroupMember.query.filter_by(group_id=group_id).all()
+        
+        if not members:
+            flash("No members in group", "error")
+            return redirect(f"/groups/{group_id}")
+            
+        split_amount = amount / len(members)
 
-def suggest_settlements(group_id):
-    balances = calculate_balances(group_id)
+        for m in members:
+            db.session.add(
+                ExpenseSplit(
+                    expense_id=expense.id,
+                    user_id=m.user_id,
+                    amount_owed=split_amount
+                )
+            )
 
-    creditors = []
-    debtors = []
+        db.session.commit()
+        flash("Expense added successfully", "success")
+        return redirect(f"/groups/{group_id}")
+    except Exception as e:
+        db.session.rollback()
+        flash("Failed to add expense", "error")
+        return redirect(f"/groups/{group_id}")
 
-    for user_id, balance in balances.items():
-        if balance > 0:
-            creditors.append([user_id, balance])
-        elif balance < 0:
-            debtors.append([user_id, -balance])  # store positive owed amount
-
-    creditors.sort(key=lambda x: x[1], reverse=True)
-    debtors.sort(key=lambda x: x[1], reverse=True)
-
-    suggestions = []
-
-    i = j = 0
-    while i < len(debtors) and j < len(creditors):
-        debtor_id, debtor_amt = debtors[i]
-        creditor_id, creditor_amt = creditors[j]
-
-        settle_amt = min(debtor_amt, creditor_amt)
-
-        suggestions.append({
-            "from": debtor_id,
-            "to": creditor_id,
-            "amount": round(settle_amt, 2)
-        })
-
-        debtors[i][1] -= settle_amt
-        creditors[j][1] -= settle_amt
-
-        if debtors[i][1] == 0:
-            i += 1
-        if creditors[j][1] == 0:
-            j += 1
-
-    return suggestions
 
 @app.route("/settlements/add", methods=["POST"])
 def add_settlement_form():
     if "user_id" not in session:
         return redirect("/login")
 
-    group_id = int(request.form["group_id"])
-    payer_id = int(request.form["payer_id"])
-    receiver_id = int(request.form["receiver_id"])
-    amount = float(request.form["amount"])
+    try:
+        group_id = int(request.form["group_id"])
+        payer_id = int(request.form["payer_id"])
+        receiver_id = int(request.form["receiver_id"])
+        amount = float(request.form["amount"])
 
-    # Sanity checks
-    if payer_id == receiver_id or amount <= 0:
+        # Sanity checks
+        if payer_id == receiver_id:
+            flash("Payer and receiver cannot be the same", "error")
+            return redirect(f"/groups/{group_id}")
+            
+        if amount <= 0:
+            flash("Amount must be greater than zero", "error")
+            return redirect(f"/groups/{group_id}")
+
+        new_settlement = Settlement(
+            group_id=group_id,
+            payer_id=payer_id,
+            receiver_id=receiver_id,
+            amount=amount
+        )
+
+        db.session.add(new_settlement)
+        db.session.commit()
+        
+        flash("Settlement recorded successfully", "success")
         return redirect(f"/groups/{group_id}")
-
-    new_settlement = Settlement(
-        group_id=group_id,
-        payer_id=payer_id,
-        receiver_id=receiver_id,
-        amount=amount
-    )
-
-    db.session.add(new_settlement)
-    db.session.commit()
-
-    return redirect(f"/groups/{group_id}")
-
+    except Exception as e:
+        db.session.rollback()
+        flash("Failed to record settlement", "error")
+        return redirect(f"/groups/{group_id}")
 
 
 @app.route("/logout")
 def logout():
     session.clear()
+    flash("Logged out successfully", "success")
     return redirect("/login")
-
 
 
 # --------------------------------------------------
@@ -744,7 +898,7 @@ def logout():
 with app.app_context():
     db.create_all()
     
-if __name__ == "__main__":
-    # Get port from environment or default to 5000 for local dev
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
+# if __name__ == "__main__":
+#     port = int(os.environ.get("PORT", 5000))
+#     app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(debug=True)
