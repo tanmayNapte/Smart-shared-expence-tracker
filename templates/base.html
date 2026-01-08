@@ -3,15 +3,18 @@
   <head>
     <meta charset="UTF-8" />
     <title>{{ title or "Smart Shared Expense Tracker" }}</title>
+
     <link
       rel="stylesheet"
       href="{{ url_for('static', filename='style.css') }}"
     />
+
     <link
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Inter:wght@400;500&display=swap"
       rel="stylesheet"
     />
   </head>
+
   <body>
     <header>
       <nav class="navbar">
@@ -21,15 +24,20 @@
 
         <div class="nav-right">
           {% if current_user and current_user.role == "admin" %}
-          <a href="/admin/create-user" class="btn primary"> Create User </a>
-          {% endif %} {% if current_user %}
-          <span class="user-name">Loged User: {{ current_user.name }}</span>
-          <a href="/logout" class="btn logout">Logout</a>
+            <a href="/admin/create-user" class="btn primary">Create User</a>
+          {% endif %}
+
+          {% if current_user %}
+            <span class="user-name">Logged User: {{ current_user.name }}</span>
+            <a href="/logout" class="btn logout">Logout</a>
           {% endif %}
         </div>
       </nav>
     </header>
 
-    <main>{% block content %}{% endblock %}</main>
+    <main>
+      {% block content %}{% endblock %}
+    </main>
+
   </body>
 </html>

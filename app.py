@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 from datetime import datetime
 import os
 from sqlalchemy import or_, select
+from models import db, User, Group, GroupMember, Settlement, Expense, ExpenseSplit
+from auth import login_required, admin_only
 
 # --------------------------------------------------
 # APP SETUP
@@ -23,66 +25,7 @@ app.config["SQLALCHEMY_DATABASE_URI"] = uri
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 app.config["SECRET_KEY"] = os.getenv("SECRET_KEY")
 
-db = SQLAlchemy(app)
-
-# --------------------------------------------------
-# MODELS
-# --------------------------------------------------
-
-class User(db.Model):
-    __tablename__ = "expense_users"
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100))
-    email = db.Column(db.String(120), unique=True)
-    password = db.Column(db.String(200))
-    role = db.Column(db.String(20), default="user")  # admin / user
-
-
-class Group(db.Model):
-    __tablename__ = "groups"
-
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    created_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-
-
-class GroupMember(db.Model):
-    __tablename__ = "group_members"
-
-    id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-
-
-class Expense(db.Model):
-    __tablename__ = "expenses"
-
-    id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
-    amount = db.Column(db.Float, nullable=False)
-    description = db.Column(db.String(255))
-    paid_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
-
-
-class ExpenseSplit(db.Model):
-    __tablename__ = "expense_splits"
-
-    id = db.Column(db.Integer, primary_key=True)
-    expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-    amount_owed = db.Column(db.Float, nullable=False)
-
-
-class Settlement(db.Model):
-    __tablename__ = "settlements"
-
-    id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey("groups.id"))
-    payer_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-    receiver_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-    amount = db.Column(db.Float, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+db.init_app(app)
 
 # --------------------------------------------------
 # CONTEXT PROCESSOR
@@ -478,10 +421,8 @@ def login_page():
 
 
 @app.route("/admin/create-user", methods=["GET", "POST"])
+@admin_only
 def create_user():
-    if not admin_required():
-        flash("Admin access required", "error")
-        return redirect("/dashboard")
 
     if request.method == "POST":
         name = request.form["name"]
@@ -551,9 +492,8 @@ def register_page():
 
 
 @app.route("/dashboard")
+@login_required
 def dashboard():
-    if "user_id" not in session:
-        return redirect("/login")
 
     user_id = session["user_id"]
 
@@ -583,9 +523,8 @@ def dashboard():
 
 
 @app.route("/groups/new", methods=["GET", "POST"])
+@login_required
 def new_group():
-    if "user_id" not in session:
-        return redirect("/login")
 
     current_user_id = session["user_id"]
 
@@ -637,9 +576,8 @@ def new_group():
 
 
 @app.route("/groups/<int:group_id>/members", methods=["GET", "POST"])
+@login_required
 def add_members(group_id):
-    if "user_id" not in session:
-        return redirect("/login")
 
     current_user_id = session["user_id"]
 
@@ -703,9 +641,9 @@ def add_members(group_id):
 
 
 @app.route("/groups/<int:group_id>")
+@login_required
 def group_page(group_id):
-    if "user_id" not in session:
-        return redirect("/login")
+    
 
     # Basic authorization
     member = GroupMember.query.filter_by(
@@ -796,9 +734,8 @@ def group_page(group_id):
 
 
 @app.route("/expenses/add", methods=["POST"])
+@login_required
 def add_expense_form():
-    if "user_id" not in session:
-        return redirect("/login")
 
     try:
         group_id = int(request.form["group_id"])
@@ -847,9 +784,8 @@ def add_expense_form():
 
 
 @app.route("/settlements/add", methods=["POST"])
+@login_required
 def add_settlement_form():
-    if "user_id" not in session:
-        return redirect("/login")
 
     try:
         group_id = int(request.form["group_id"])
@@ -883,6 +819,35 @@ def add_settlement_form():
         flash("Failed to record settlement", "error")
         return redirect(f"/groups/{group_id}")
 
+@app.route("/groups/<int:group_id>/delete", methods=["POST"])
+@admin_only
+def delete_group(group_id):
+    group = Group.query.get_or_404(group_id)
+
+    try:
+        # delete related data first (important)
+        ExpenseSplit.query.filter(
+            ExpenseSplit.expense_id.in_(
+                db.session.query(Expense.id).filter_by(group_id=group_id)
+            )
+        ).delete(synchronize_session=False)
+
+        Expense.query.filter_by(group_id=group_id).delete()
+        Settlement.query.filter_by(group_id=group_id).delete()
+        GroupMember.query.filter_by(group_id=group_id).delete()
+
+        db.session.delete(group)
+        db.session.commit()
+
+    except Exception as e:
+        db.session.rollback()
+        return "Failed to delete group", 500
+
+    return redirect("/dashboard")
+
+
+
+
 
 @app.route("/logout")
 def logout():
@@ -899,5 +864,4 @@ with app.app_context():
     db.create_all()
     
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(debug=True)
