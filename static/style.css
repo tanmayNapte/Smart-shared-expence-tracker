@@ -1,10 +1,10 @@
-
 * {
     box-sizing: border-box;
 }
 
 body {
     margin: 0;
+    padding: 0;
     background: #f5f2ec;
     font-family: "Inter", sans-serif;
     color: #2b2b2b;
@@ -13,7 +13,6 @@ body {
 html {
     scrollbar-width: thin;
 }
-
 
 /* ---------- MAIN ---------- */
 main {
@@ -63,13 +62,13 @@ a {
     color: #ffffff;
 }
 
+.btn.primary:hover {
+    background: #243229;
+}
+
 .btn.secondary {
     background: #1a2652;
     color: #ffffff;
-}
-
-.btn.primary:hover {
-    background: #243229;
 }
 
 .btn.success {
@@ -101,7 +100,6 @@ a {
 .btn.danger:hover {
     background: #ffffff;
 }
-
 
 /* ---------- CARDS ---------- */
 .card {
@@ -243,6 +241,31 @@ label {
     border-left: 4px solid #050807;
 }
 
+/* .balance-summary {
+    font-family: serif;
+    margin-bottom: 15px;
+    font-size: 20px;
+    font-weight: 600;
+} */
+
+.balance-positive {
+    font-family: serif;
+    color: #067647;
+    font-size: 20px;
+}
+
+.balance-negative {
+    font-family: serif;
+    color: #b42318;
+    font-size: 20px;
+    font-weight: 500;
+}
+
+.balance-settled {
+    font-family: serif;
+    color: #6f6f6f;
+}
+
 /* ---------- LIST / ROW ---------- */
 .row {
     padding: 12px 0;
@@ -313,12 +336,11 @@ li {
 
 .brand-text {
     font-family: "Playfair Display", serif;
-    font-size: 30px;   /* bigger, authoritative */
+    font-size: 30px;
     font-weight: 700;
     line-height: 1;
     color: #2f3e34;
 }
-
 
 .brand:hover {
     color: #493c34;
@@ -349,7 +371,7 @@ li {
 .dashboard-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-end;
+    align-items: center;
     margin-bottom: 32px;
 }
 
@@ -363,6 +385,57 @@ li {
     font-size: 14px;
     color: #6f6f6f;
     font-weight: 400;
+    margin: 4px 0 0;
+}
+
+.dashboard-balance {
+    font-size: 26px;
+    margin-top: 6px;
+}
+
+.dashboard-divider {
+    border: none;
+    border-top: 1px solid #e3dfd8;
+    margin: 18px 0 28px;
+}
+
+.dashboard-container {
+    padding-bottom: 40px;
+}
+
+.groups-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    margin-top: 30px;
+}
+
+/* ---------- GROUP CARDS ---------- */
+.group-balance {
+    font-size: 15px;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.group-positive {
+    font-family: serif;
+    color: #067647;
+    font-weight: 400;
+    margin-top: 8px;
+}
+
+.group-negative {
+    font-family: serif;
+    color: #b42318;
+    font-weight: 400;
+    margin-top: 8px;
+}
+
+.group-neutral {
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+    color: #6f6f6f;
+    margin-top: 8px;
 }
 
 .group-grid {
@@ -488,7 +561,6 @@ li {
 }
 
 /* ---------- MEMBER LIST ---------- */
-
 .member-list {
     border: 1px solid #e3dfd8;
     border-radius: 10px;
@@ -501,7 +573,6 @@ li {
     scrollbar-color: #b8a898 transparent;
     list-style: decimal;
 }
-
 
 .member-item {
     display: flex;
@@ -555,7 +626,6 @@ li {
     color: #6f6f6f;
 }
 
-
 .member-list::-webkit-scrollbar {
     width: 6px;
 }
@@ -573,7 +643,28 @@ li {
     background-color: #b8a898;
 }
 
+.member-list.numbered {
+    counter-reset: member;
+    padding-left: 0;
+}
 
+.member-list.numbered .member-item {
+    counter-increment: member;
+    position: relative;
+    padding: 12px 16px 12px 48px;
+    border-bottom: 1px solid #ece7df;
+}
+
+.member-list.numbered .member-item::before {
+    content: counter(member) ".";
+    position: absolute;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-weight: 600;
+    color: #000000;
+    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+}
 
 /* ---------- SUGGESTED SETTLEMENT ---------- */
 .suggested-settlement {
@@ -635,11 +726,17 @@ li {
 }
 
 /* ---------- FLASH MESSAGES ---------- */
+.flash-container {
+    max-width: 900px;
+    margin: 16px auto;
+}
+
 .flash {
-    padding: 12px 14px;
+    padding: 12px 16px;
     border-radius: 6px;
-    margin-bottom: 16px;
+    margin-bottom: 10px;
     font-size: 14px;
+    font-weight: 500;
     border: 1px solid;
     animation: slideIn 0.3s ease;
 }
@@ -655,13 +752,15 @@ li {
     }
 }
 
-.flash.error {
+.flash.error,
+.flash-error {
     background: #f8eaea;
     color: #8b2e2e;
     border-color: #e2bcbc;
 }
 
-.flash.success {
+.flash.success,
+.flash-success {
     background: #eef6ee;
     color: #2f6b3a;
     border-color: #b7d4bc;
@@ -711,6 +810,13 @@ li {
     opacity: 1;
 }
 
+/* ---------- UTILITIES ---------- */
+.muted {
+    color: #2f3e34;
+    font-size: 15px;
+    font-style: italic;
+}
+
 /* ---------- MOBILE RESPONSIVENESS ---------- */
 @media (max-width: 768px) {
     body {
@@ -730,15 +836,7 @@ li {
         color: #000000;
         font-size: 16px;
     }
-}
 
-.muted {
-    color: #2f3e34;
-    font-size: 15px;
-    font-style: italic;
-}
-
-@media (max-width: 768px) {
     .group-grid {
         display: block;
     }
@@ -746,9 +844,7 @@ li {
     .group-card {
         margin-bottom: 14px;
     }
-}
 
-@media (max-width: 768px) {
     .two-col {
         display: block;
     }
@@ -756,9 +852,7 @@ li {
     .two-col .card {
         margin-bottom: 18px;
     }
-}
 
-@media (max-width: 768px) {
     .ledger-row {
         grid-template-columns: 1fr;
         gap: 6px;
@@ -771,9 +865,7 @@ li {
     .ledger-status {
         font-size: 11px;
     }
-}
 
-@media (max-width: 768px) {
     input,
     select,
     button {
@@ -784,9 +876,7 @@ li {
     button {
         width: 100%;
     }
-}
 
-@media (max-width: 768px) {
     header {
         padding: 14px 16px;
     }
@@ -798,28 +888,4 @@ li {
     .logout-link {
         font-size: 12px;
     }
-}
-
-.member-list.numbered {
-    counter-reset: member;
-    padding-left: 0;
-}
-
-.member-list.numbered .member-item {
-    counter-increment: member;
-    position: relative;
-
-    padding: 12px 16px 12px 48px;
-    border-bottom: 1px solid #ece7df;
-}
-
-.member-list.numbered .member-item::before {
-    content: counter(member) ".";
-    position: absolute;
-    left: 16px;
-    top: 50%;
-    transform: translateY(-50%);
-    font-weight: 600;
-    color: #000000;
-    font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
 }

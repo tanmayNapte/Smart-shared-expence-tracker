@@ -28,38 +28,44 @@ class InvalidGroupDataError(Exception):
 
 
 def create_group(name, created_by_id, member_ids=None):
-    """
-    Create a new group with members.
-    
-    Args:
-        name: Group name
-        created_by_id: ID of user creating the group
-        member_ids: List of user IDs to add as members (optional)
-    
-    Returns:
-        Group object
-    
-    Raises:
-        InvalidGroupDataError: If name is empty or None
-    """
     if not name or not name.strip():
         raise InvalidGroupDataError("Group name is required")
-    
-    group = Group(name=name.strip(), created_by=created_by_id)
+
+    name = name.strip()
+
+    # 🔒 Business rule: no duplicate group names per creator
+    existing = (
+        Group.query
+        .filter_by(name=name, created_by=created_by_id)
+        .first()
+    )
+    if existing:
+        raise InvalidGroupDataError("Group with this name already exists")
+
+    group = Group(name=name, created_by=created_by_id)
     db.session.add(group)
-    db.session.commit()
-    
+    db.session.flush()  # Get the group.id before committing
+
     # Add creator as member
-    db.session.add(GroupMember(group_id=group.id, user_id=created_by_id))
-    
-    # Add other members if provided
+    db.session.add(
+        GroupMember(group_id=group.id, user_id=created_by_id)
+    )
+
+    # Add other members
     if member_ids:
-        for user_id in member_ids:
-            if user_id != created_by_id:  # Don't add creator twice
-                # Check if user exists
-                if User.query.get(user_id):
-                    db.session.add(GroupMember(group_id=group.id, user_id=user_id))
-    
+        for user_id in set(member_ids):  # avoid duplicates
+            if user_id == created_by_id:
+                continue
+
+            user = User.query.get(user_id)
+            if not user:
+                raise InvalidGroupDataError(f"User {user_id} does not exist")
+
+            db.session.add(
+                GroupMember(group_id=group.id, user_id=user_id)
+            )
+
+    # ✅ Single commit = atomic operation
     db.session.commit()
     return group
 
@@ -85,26 +91,28 @@ def get_user_groups(user_id):
 
 def get_user_groups_with_counts(user_id):
     """
-    Get all groups a user is a member of with member counts.
-    
-    Args:
-        user_id: User ID
-    
-    Returns:
-        List of dicts with keys: id, name, member_count
+    Get all groups a user is a member of with member counts
+    AND the user's balance in each group.
     """
     groups = get_user_groups(user_id)
     result = []
-    
+
     for group in groups:
         member_count = GroupMember.query.filter_by(group_id=group.id).count()
+
+        # ✅ reuse existing balance logic
+        balances = calculate_balances(group.id)
+        user_balance = balances.get(user_id, 0)
+
         result.append({
             "id": group.id,
             "name": group.name,
-            "member_count": member_count
+            "member_count": member_count,
+            "user_balance": user_balance
         })
-    
+
     return result
+
 
 
 def get_group_by_id(group_id):
@@ -418,16 +426,25 @@ def get_group_display_data(group_id, current_user_id):
         group_id=group_id
     ).order_by(Expense.created_at.desc()).all()
     
-    # Format expenses with payer names
+    # Format expenses with payer names and audit info
     expenses_list = []
     for expense in expenses:
         payer = User.query.get(expense.paid_by)
+        creator = User.query.get(expense.created_by) if expense.created_by else None
+        last_editor = User.query.get(expense.last_edited_by) if expense.last_edited_by else None
+        
         expenses_list.append({
             "id": expense.id,
             "amount": expense.amount,
             "description": expense.description,
             "payer_name": payer.name if payer else "Unknown",
-            "created_at": expense.created_at
+            "payer_id": expense.paid_by,
+            "created_at": expense.created_at,
+            "created_by": expense.created_by,
+            "created_by_name": creator.name if creator else "Unknown",
+            "last_edited_by": expense.last_edited_by,
+            "last_edited_by_name": last_editor.name if last_editor else None,
+            "last_edited_at": expense.last_edited_at
         })
     
     # Get balances and format

@@ -1,42 +1,66 @@
-{% extends "base.html" %}
-{% block content %}
+{% extends "base.html" %} {% block content %}
 
-<div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:30px;">
-    <div>
-        <h2>Your Groups</h2>
-        <p style="color:#6f6f6f; font-size:14px; margin-top:6px;">
-            Manage shared expenses with clarity and discretion.
-        </p>
-    </div>
+<!-- DASHBOARD HEADER -->
+<div class="group-header">
+  <div class="balance-summary">
+    <h2 class="dashboard-title">Your Balance</h2>
 
-    <a href="/groups/new" class="btn primary">
-        + Create Group
-    </a>
+    {% if total_balance > 0 %}
+    <p class="balance-positive">You’ll receive ₹{{ total_balance }}</p>
+    {% elif total_balance < 0 %}
+    <p class="balance-negative">You need to pay ₹{{ total_balance | abs }}</p>
+    {% else %}
+    <p class="balance-settled">All settled 🎉</p>
+    {% endif %}
+  </div>
 </div>
 
+<hr class="dashboard-divider" />
+
 {% if groups %}
-    <div class="group-grid">
-        {% for g in groups %}
-            <a href="/groups/{{ g.id }}" class="group-card">
-                <h3>{{ g.name }}</h3>
 
-                <p class="meta">
-                    {{ g.member_count }} members
-                </p>
+<div class="groups-header">
+  <div>
+    <h2 class="dashboard-title">Your Groups</h2>
+    <p class="dashboard-subtitle">
+      Manage shared expenses with clarity and discretion.
+    </p>
+  </div>
 
-                <span class="enter">
-                    View Group
-                </span>
-            </a>
-        {% endfor %}
+  <a href="/groups/new" class="btn primary">
+    + Create Group
+  </a>
+</div>
+
+<div class="group-grid">
+  {% for g in groups %}
+  <a href="/groups/{{ g.id }}" class="group-card">
+    <h3>{{ g.name }}</h3>
+
+    <p class="meta">{{ g.member_count }} members</p>
+    <div class="group-balance">
+      {% if g["user_balance"] > 0 %}
+      <span class="group-positive">
+        You’ll receive ₹{{ g["user_balance"] }}
+      </span>
+      {% elif g["user_balance"] < 0 %}
+      <span class="group-negative">
+        You owe ₹{{ g["user_balance"] | abs }}
+      </span>
+      {% else %}
+      <span class="group-neutral">Settled</span>
+      {% endif %}
     </div>
+
+    <span class="enter"> View Group </span>
+  </a>
+  {% endfor %}
+</div>
 {% else %}
-    <div class="card">
-        <p>No groups yet.</p>
-        <p style="color:#6f6f6f; font-size:14px;">
-            Create a group to start tracking shared expenses.
-        </p>
-    </div>
-{% endif %}
-
-{% endblock %}
+<div class="card">
+  <p>No groups yet.</p>
+  <p style="color: #6f6f6f; font-size: 14px">
+    Create a group to start tracking shared expenses.
+  </p>
+</div>
+{% endif %} {% endblock %}

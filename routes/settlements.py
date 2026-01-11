@@ -1,15 +1,17 @@
 
-from flask import Blueprint, request, jsonify, redirect, flash
+from flask import Blueprint, request, jsonify, redirect, flash, session
 from utils.decorators import login_required
 from services.settlement_service import (
     create_settlement,
     InvalidSettlementDataError,
-    GroupNotFoundError
+    GroupNotFoundError,
+    SettlementPermissionError
 )
 
 settlements_bp = Blueprint("settlements", __name__)
 
 @settlements_bp.route("/api/settlements", methods=["POST"])
+@login_required
 def api_add_settlement():
     data = request.json
     try:
@@ -25,30 +27,43 @@ def api_add_settlement():
     except Exception as e:
         return jsonify({"error": "Failed to create settlement"}), 500
 
-
 @settlements_bp.route("/settlements/add", methods=["POST"])
 @login_required
 def add_settlement():
-    group_id = request.form.get("group_id")
-    payer_id = request.form.get("payer_id")
-    receiver_id = request.form.get("receiver_id")
-    amount = request.form.get("amount")
-    
+
     try:
-        settlement = create_settlement(
-            group_id=int(group_id),
-            payer_id=int(payer_id),
-            receiver_id=int(receiver_id),
-            amount=float(amount)
+        group_id = int(request.form.get("group_id"))
+        payer_id = int(request.form.get("payer_id"))
+        receiver_id = int(request.form.get("receiver_id"))
+        amount = float(request.form.get("amount"))
+    except (ValueError, TypeError):
+        flash("Invalid input", "error")
+        return redirect(f"/groups/{request.form.get('group_id')}")
+
+    actor_id = session.get("user_id")
+
+    try:
+        create_settlement(
+            group_id=group_id,
+            payer_id=payer_id,
+            receiver_id=receiver_id,
+            amount=amount,
+            actor_id=actor_id
         )
         flash("Settlement recorded successfully", "success")
-        return redirect(f"/groups/{group_id}")
+        
+    except SettlementPermissionError:
+        flash(
+            "You can only record a settlement if you are the payer or the receiver.",
+            "error"
+        )
+
     except (InvalidSettlementDataError, GroupNotFoundError) as e:
         flash(str(e), "error")
-        return redirect(f"/groups/{group_id}")
-    except (ValueError, TypeError) as e:
-        flash("Invalid input", "error")
-        return redirect(f"/groups/{group_id}")
+
     except Exception as e:
-        flash("Failed to record settlement", "error")
-        return redirect(f"/groups/{group_id}")
+        print("ACTUAL ERROR:", type(e), e)
+        flash(str(e), "error")
+
+
+    return redirect(f"/groups/{group_id}")

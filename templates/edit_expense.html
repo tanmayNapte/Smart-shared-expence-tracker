@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a href="/groups/{{ expense.group_id }}" class="link">← Back to Group</a>
+
+<div class="card" style="max-width: 520px; margin: 40px auto;">
+    <h2>Edit Expense</h2>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <p style="color: #8b2e2e; font-size: 14px; margin-bottom: 14px;">
+                    {{ message }}
+                </p>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <form method="POST">
+        <label style="font-size: 14px; color: #6b4f3f;">Amount</label>
+        <input
+            type="number"
+            name="amount"
+            step="0.01"
+            min="0.01"
+            value="{{ expense.amount }}"
+            required
+        />
+
+        <label style="font-size: 14px; color: #6b4f3f; margin-top: 16px;">Description</label>
+        <input
+            type="text"
+            name="description"
+            value="{{ expense.description or '' }}"
+            placeholder="Expense description"
+        />
+
+        <label style="font-size: 14px; color: #6b4f3f; margin-top: 16px;">Paid By</label>
+        <select name="paid_by" required>
+            {% for m in members %}
+                <option value="{{ m.id }}" {% if m.id == expense.paid_by %}selected{% endif %}>
+                    {{ m.name }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <div style="margin-top: 28px; display: flex; gap: 8px;">
+            <button type="submit" class="btn primary" style="flex: 1;">
+                Save Changes
+            </button>
+            <a href="/groups/{{ expense.group_id }}" class="btn secondary" style="flex: 1; text-align: center; text-decoration: none;">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+{% endblock %}

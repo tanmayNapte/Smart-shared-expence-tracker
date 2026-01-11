@@ -8,7 +8,8 @@ Rules:
 - Can raise exceptions
 - Returns plain Python data
 """
-from models import db, Expense, ExpenseSplit, GroupMember
+from models import db, Expense, ExpenseSplit, GroupMember, User
+from datetime import datetime
 
 
 class ExpenseNotFoundError(Exception):
@@ -26,7 +27,12 @@ class GroupNotFoundError(Exception):
     pass
 
 
-def create_expense(group_id, amount, paid_by, description=None, splits=None):
+class PermissionError(Exception):
+    """Raised when user doesn't have permission for an operation"""
+    pass
+
+
+def create_expense(group_id, amount, paid_by, created_by, description=None, splits=None):
     """
     Create an expense with splits.
     
@@ -63,10 +69,11 @@ def create_expense(group_id, amount, paid_by, description=None, splits=None):
         group_id=group_id,
         amount=float(amount),
         paid_by=int(paid_by),
+        created_by=int(created_by),
         description=description.strip() if description else None
     )
     db.session.add(expense)
-    db.session.commit()
+    db.session.flush()  # Get expense.id before creating splits
     
     # Create splits
     if splits:
@@ -131,3 +138,137 @@ def get_group_expenses(group_id):
     return Expense.query.filter_by(
         group_id=group_id
     ).order_by(Expense.created_at.desc()).all()
+
+
+def edit_expense(expense_id, user_id, amount=None, paid_by=None, description=None):
+    """
+    Edit an expense.
+    
+    Rules:
+    - Only the creator of the expense or group admin can edit
+    - If amount or paid_by changes, expense splits need to be recalculated
+    
+    Args:
+        expense_id: Expense ID
+        user_id: User ID attempting to edit
+        amount: New amount (optional)
+        paid_by: New payer ID (optional)
+        description: New description (optional)
+    
+    Returns:
+        Updated Expense object
+    
+    Raises:
+        ExpenseNotFoundError: If expense doesn't exist
+        PermissionError: If user doesn't have permission
+        InvalidExpenseDataError: If data is invalid
+    """
+    expense = get_expense_by_id(expense_id)
+    user = User.query.get(user_id)
+    
+    if not user:
+        raise PermissionError("Invalid user")
+    
+    # Check permission: creator or admin
+    from services.group_service import get_group_by_id
+    group = get_group_by_id(expense.group_id)
+    
+    can_edit = (
+        expense.created_by == user_id or
+        user.role == "admin" or
+        group.created_by == user_id
+    )
+    
+    if not can_edit:
+        raise PermissionError("You don't have permission to edit this expense")
+    
+    # Update fields
+    need_recalculate_splits = False
+    
+    if amount is not None:
+        if amount <= 0:
+            raise InvalidExpenseDataError("Amount must be positive")
+        if expense.amount != float(amount):
+            expense.amount = float(amount)
+            need_recalculate_splits = True
+    
+    if paid_by is not None:
+        if expense.paid_by != int(paid_by):
+            expense.paid_by = int(paid_by)
+            # No need to recalculate splits if only payer changes
+    
+    if description is not None:
+        expense.description = description.strip() if description else None
+    
+    # Recalculate splits if amount changed
+    if need_recalculate_splits:
+        # Delete existing splits
+        ExpenseSplit.query.filter_by(expense_id=expense.id).delete()
+        
+        # Create new splits (equal split)
+        members = GroupMember.query.filter_by(group_id=expense.group_id).all()
+        if not members:
+            raise InvalidExpenseDataError("Group has no members")
+        
+        split_amount = expense.amount / len(members)
+        for member in members:
+            db.session.add(
+                ExpenseSplit(
+                    expense_id=expense.id,
+                    user_id=member.user_id,
+                    amount_owed=split_amount
+                )
+            )
+    
+    # Update audit fields
+    expense.last_edited_by = user_id
+    expense.last_edited_at = datetime.utcnow()
+    
+    db.session.commit()
+    return expense
+
+
+def delete_expense(expense_id, user_id):
+    """
+    Delete an expense.
+    
+    Rules:
+    - Only the creator of the expense, group creator, or admin can delete
+    - This will also delete all associated expense splits
+    
+    Args:
+        expense_id: Expense ID
+        user_id: User ID attempting to delete
+    
+    Returns:
+        None
+    
+    Raises:
+        ExpenseNotFoundError: If expense doesn't exist
+        PermissionError: If user doesn't have permission
+    """
+    expense = get_expense_by_id(expense_id)
+    user = User.query.get(user_id)
+    
+    if not user:
+        raise PermissionError("Invalid user")
+    
+    # Check permission: creator, group creator, or admin
+    from services.group_service import get_group_by_id
+    group = get_group_by_id(expense.group_id)
+    
+    can_delete = (
+        expense.created_by == user_id or
+        user.role == "admin" or
+        group.created_by == user_id
+    )
+    
+    if not can_delete:
+        raise PermissionError("You don't have permission to delete this expense")
+    
+    # Delete associated splits first
+    ExpenseSplit.query.filter_by(expense_id=expense.id).delete()
+    
+    # Delete expense
+    db.session.delete(expense)
+    db.session.commit()

@@ -1,14 +1,7 @@
-"""
-Settlement Service - Business logic for settlement operations
 
-Rules:
-- No Flask (request, session, redirect, flash)
-- No decorators
-- Can use models and db
-- Can raise exceptions
-- Returns plain Python data
-"""
 from models import db, Settlement
+from services.group_service import is_user_member
+from services.group_service import InvalidGroupDataError
 
 
 class SettlementNotFoundError(Exception):
@@ -25,50 +18,47 @@ class GroupNotFoundError(Exception):
     """Raised when a group is not found"""
     pass
 
+class SettlementPermissionError(Exception):
+    pass
 
-def create_settlement(group_id, payer_id, receiver_id, amount):
-    """
-    Create a settlement record.
-    
-    Args:
-        group_id: Group ID
-        payer_id: User ID who is paying
-        receiver_id: User ID who is receiving
-        amount: Settlement amount (float)
-    
-    Returns:
-        Settlement object
-    
-    Raises:
-        InvalidSettlementDataError: If data is invalid
-        GroupNotFoundError: If group doesn't exist
-    """
+
+def create_settlement(group_id, payer_id, receiver_id, amount, actor_id):
+
+    # 🔒 PERMISSION CHECK (FIRST)
+    if actor_id != payer_id and actor_id != receiver_id:
+        raise SettlementPermissionError(
+            "You can only record a settlement if you are the payer or the receiver."
+        )
+
+    # ---------- VALIDATION ----------
     if not all([group_id, payer_id, receiver_id, amount]):
         raise InvalidSettlementDataError("All fields are required")
-    
+
     if payer_id == receiver_id:
         raise InvalidSettlementDataError("Payer and receiver cannot be the same")
-    
+
     if amount <= 0:
         raise InvalidSettlementDataError("Amount must be positive")
-    
-    # Validate group exists
+
+    # ---------- GROUP CHECK ----------
     from services.group_service import get_group_by_id
     try:
         get_group_by_id(group_id)
     except Exception:
         raise GroupNotFoundError(f"Group {group_id} not found")
-    
+
+    # ---------- CREATE ----------
     settlement = Settlement(
         group_id=int(group_id),
         payer_id=int(payer_id),
         receiver_id=int(receiver_id),
         amount=float(amount)
     )
-    
+
     db.session.add(settlement)
     db.session.commit()
     return settlement
+
 
 
 def get_settlement_by_id(settlement_id):
@@ -103,3 +93,31 @@ def get_group_settlements(group_id):
     return Settlement.query.filter_by(
         group_id=group_id
     ).order_by(Settlement.created_at.desc()).all()
+
+def record_settlement(group_id, payer_id, receiver_id, amount, actor_id):
+    # Basic sanity
+    if payer_id == receiver_id:
+        raise InvalidGroupDataError("Payer and receiver cannot be same")
+
+    if amount <= 0:
+        raise InvalidGroupDataError("Invalid settlement amount")
+
+    # 🔒 CRITICAL RULE
+    if actor_id != payer_id and actor_id != receiver_id:
+        raise SettlementPermissionError("Forbidden")
+
+    # Optional but recommended: group membership check
+    if not is_user_member(group_id, payer_id) or not is_user_member(group_id, receiver_id):
+        raise SettlementPermissionError("User not in group")
+
+    settlement = Settlement(
+        group_id=group_id,
+        payer_id=payer_id,
+        receiver_id=receiver_id,
+        amount=amount
+    )
+
+    db.session.add(settlement)
+    db.session.commit()
+
+    return settlement

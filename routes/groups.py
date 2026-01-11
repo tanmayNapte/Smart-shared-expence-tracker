@@ -15,6 +15,7 @@ from services.group_service import (
 groups_bp = Blueprint("groups", __name__)
 
 @groups_bp.route("/api/groups", methods=["POST"])
+@login_required
 def api_create_group():
     data = request.json
     try:
@@ -30,16 +31,19 @@ def api_create_group():
         return jsonify({"error": "Failed to create group"}), 500
 
 
-@groups_bp.route("/api/groups/<int:user_id>")
-def api_user_groups(user_id):
+@groups_bp.route("/api/groups", methods=["GET"])
+@login_required
+def api_user_groups():
     try:
+        user_id = session["user_id"]   # ← source of truth
         groups = get_user_groups(user_id)
         return jsonify([{"id": g.id, "name": g.name} for g in groups])
-    except Exception as e:
+    except Exception:
         return jsonify({"error": "Failed to get groups"}), 500
 
 
 @groups_bp.route("/api/groups/<int:group_id>/members")
+@login_required
 def api_group_members(group_id):
     try:
         members = get_group_members(group_id)
@@ -51,6 +55,7 @@ def api_group_members(group_id):
 
 
 @groups_bp.route("/api/groups/<int:group_id>/balances")
+@login_required
 def api_balances(group_id):
     try:
         balances = calculate_balances(group_id)
@@ -73,36 +78,67 @@ def dashboard():
     try:
         from services.group_service import get_user_groups_with_counts
         groups = get_user_groups_with_counts(user_id)
-        return render_template("dashboard.html", groups=groups)
+        total_balance = 0
+        for g in groups:
+            g["user_balance"] = g.get("user_balance", 0)
+            total_balance += g["user_balance"]
+
+
+        return render_template(
+            "dashboard.html",
+            groups=groups,
+            total_balance=total_balance
+        )
+        
     except Exception as e:
+        print("DASHBOARD LOAD ERROR:", type(e), e)
         flash("Failed to load groups", "error")
-        return render_template("dashboard.html", groups=[])
+        return render_template(
+            "dashboard.html",
+            groups=[],
+            total_balance=0
+        )
 
 
 @groups_bp.route("/groups/new", methods=["GET", "POST"])
 @login_required
 def create_group_page():
+    users = User.query.all()  # ✅ defined once
+
     if request.method == "POST":
         name = request.form.get("name")
-        user_id = session.get("user_id")
-        member_ids = [int(uid) for uid in request.form.getlist("members") if uid.isdigit()]
-        
+        member_ids = [
+            int(uid) for uid in request.form.getlist("members")
+            if uid.isdigit()
+        ]
+
         try:
+            user_id = session.get("user_id")
+            if not user_id:
+                return redirect("/login")
+            
             group = create_group(
                 name=name,
                 created_by_id=user_id,
                 member_ids=member_ids
             )
+            flash("Group created successfully", "success")
             return redirect(f"/groups/{group.id}")
+
         except InvalidGroupDataError as e:
-            users = User.query.all()
-            return render_template("create_group.html", users=users, error=str(e))
+            flash(str(e), "error")
+            return render_template(
+                "create_group.html",
+                users=users
+            )
         except Exception as e:
-            users = User.query.all()
-            return render_template("create_group.html", users=users, error="Failed to create group")
-    
-    # GET request - show form
-    users = User.query.all()
+            flash(f"Failed to create group: {str(e)}", "error")
+            return render_template(
+                "create_group.html",
+                users=users
+            )
+
+    # ✅ GET request
     return render_template("create_group.html", users=users)
 
 
