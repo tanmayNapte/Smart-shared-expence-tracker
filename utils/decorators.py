@@ -2,19 +2,18 @@ from functools import wraps
 from flask import session, redirect
 from models import db, User
 
-
 def login_required(view):
     @wraps(view)
-    def wrapped_view(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         if "user_id" not in session:
             return redirect("/login")
         return view(*args, **kwargs)
-    return wrapped_view
+    return wrapper
 
 
 def admin_only(view):
     @wraps(view)
-    def wrapped_view(*args, **kwargs):
+    def wrapper(*args, **kwargs):
         if "user_id" not in session:
             return redirect("/login")
 
@@ -23,4 +22,4 @@ def admin_only(view):
             return "Forbidden", 403
 
         return view(*args, **kwargs)
-    return wrapped_view
+    return wrapper
