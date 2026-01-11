@@ -63,6 +63,11 @@ a {
     color: #ffffff;
 }
 
+.btn.secondary {
+    background: #1a2652;
+    color: #ffffff;
+}
+
 .btn.primary:hover {
     background: #243229;
 }

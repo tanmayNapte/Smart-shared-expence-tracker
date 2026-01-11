@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<a href="/groups/{{ group.id }}" class="link">← Back to Group</a><br><br>
+
+<div class="card" style="max-width: 400px;">
+  <h3>Rename Group</h3>
+
+  {% if error %}
+    <p class="error">{{ error }}</p>
+  {% endif %}
+
+  <form method="POST">
+    <input
+      type="text"
+      name="name"
+      value="{{ group.name }}"
+      placeholder="Group name"
+      required
+    />
+
+    <button class="btn primary">Save</button>
+  </form>
+</div>
+
+{% endblock %}
