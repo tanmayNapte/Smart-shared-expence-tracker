@@ -1,5 +1,4 @@
 from flask import Blueprint, request, jsonify, session, render_template, redirect, flash
-from models import db, User
 from utils.decorators import login_required, admin_only
 from services.group_service import (
     create_group,
@@ -11,6 +10,9 @@ from services.group_service import (
     GroupNotFoundError,
     InvalidGroupDataError
 )
+from models import db, User
+from services.ledger_service import get_user_net_balances_by_person
+
 
 groups_bp = Blueprint("groups", __name__)
 
@@ -68,36 +70,49 @@ def api_balances(group_id):
         return jsonify({"error": "Failed to calculate balances"}), 500
 
 
+from models import db
+
 @groups_bp.route("/dashboard")
 @login_required
 def dashboard():
     user_id = session.get("user_id")
     if not user_id:
         return redirect("/login")
-    
+
+    groups = []
+    total_balance = 0
+    people_balances = []
+
     try:
         from services.group_service import get_user_groups_with_counts
-        groups = get_user_groups_with_counts(user_id)
-        total_balance = 0
-        for g in groups:
-            g["user_balance"] = g.get("user_balance", 0)
-            total_balance += g["user_balance"]
+        from services.ledger_service import get_user_net_balances_by_person
 
+        groups = get_user_groups_with_counts(user_id)
+        total_balance = sum(g.get("user_balance", 0) for g in groups)
+        people_balances = get_user_net_balances_by_person(user_id)
 
         return render_template(
             "dashboard.html",
             groups=groups,
-            total_balance=total_balance
+            total_balance=total_balance,
+            people_balances=people_balances
         )
-        
+
     except Exception as e:
+        # 🔴 THIS IS THE KEY LINE
+        db.session.rollback()
+
         print("DASHBOARD LOAD ERROR:", type(e), e)
-        flash("Failed to load groups", "error")
+        flash("Failed to load dashboard", "error")
+
         return render_template(
             "dashboard.html",
-            groups=[],
-            total_balance=0
+            groups=groups,
+            total_balance=total_balance,
+            people_balances=people_balances
         )
+
+
 
 
 @groups_bp.route("/groups/new", methods=["GET", "POST"])

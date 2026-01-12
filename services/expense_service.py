@@ -78,12 +78,12 @@ def create_expense(group_id, amount, paid_by, created_by, description=None, spli
     # Create splits
     if splits:
         # Use provided splits
-        for user_id, amount_owed in splits.items():
+        for user_id, amount in splits.items():
             db.session.add(
                 ExpenseSplit(
                     expense_id=expense.id,
                     user_id=int(user_id),
-                    amount_owed=float(amount_owed)
+                    amount=float(amount)
                 )
             )
     else:
@@ -98,7 +98,7 @@ def create_expense(group_id, amount, paid_by, created_by, description=None, spli
                 ExpenseSplit(
                     expense_id=expense.id,
                     user_id=member.user_id,
-                    amount_owed=split_amount
+                    amount=split_amount
                 )
             )
     
@@ -216,7 +216,7 @@ def edit_expense(expense_id, user_id, amount=None, paid_by=None, description=Non
                 ExpenseSplit(
                     expense_id=expense.id,
                     user_id=member.user_id,
-                    amount_owed=split_amount
+                    amount=split_amount
                 )
             )
     

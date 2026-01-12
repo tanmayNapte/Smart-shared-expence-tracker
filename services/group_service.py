@@ -314,7 +314,7 @@ def calculate_balances(group_id):
     for expense in expenses:
         splits = ExpenseSplit.query.filter_by(expense_id=expense.id).all()
         for split in splits:
-            balances[split.user_id] -= split.amount_owed
+            balances[split.user_id] -= split.amount
     
     # Apply settlements
     settlements = Settlement.query.filter_by(group_id=group_id).all()

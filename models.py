@@ -13,6 +13,7 @@ class User(db.Model):
     password = db.Column(db.String(200))
     role = db.Column(db.String(20), default="user")
     
+
 class Group(db.Model):
     __tablename__ = "groups"
 
@@ -45,11 +46,14 @@ class Expense(db.Model):
 
 class ExpenseSplit(db.Model):
     __tablename__ = "expense_splits"
-
+    
     id = db.Column(db.Integer, primary_key=True)
-    expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id"))
-    user_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-    amount_owed = db.Column(db.Float, nullable=False)
+    expense_id = db.Column(db.Integer, db.ForeignKey("expenses.id"), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"), nullable=False)
+    amount = db.Column(db.Float, nullable=False)
+    
+    # Add relationship to access expense data
+    expense = db.relationship("Expense", backref="splits")
 
 
 class Settlement(db.Model):

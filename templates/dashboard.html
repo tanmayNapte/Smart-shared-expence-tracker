@@ -1,66 +1,96 @@
-{% extends "base.html" %} {% block content %}
+{% extends "base.html" %}
+{% block content %}
 
-<!-- DASHBOARD HEADER -->
-<div class="group-header">
-  <div class="balance-summary">
-    <h2 class="dashboard-title">Your Balance</h2>
+<div class="dashboard-grid">
 
-    {% if total_balance > 0 %}
-    <p class="balance-positive">You’ll receive ₹{{ total_balance }}</p>
-    {% elif total_balance < 0 %}
-    <p class="balance-negative">You need to pay ₹{{ total_balance | abs }}</p>
-    {% else %}
-    <p class="balance-settled">All settled 🎉</p>
-    {% endif %}
-  </div>
-</div>
-
-<hr class="dashboard-divider" />
-
-{% if groups %}
-
-<div class="groups-header">
-  <div>
-    <h2 class="dashboard-title">Your Groups</h2>
-    <p class="dashboard-subtitle">
-      Manage shared expenses with clarity and discretion.
-    </p>
-  </div>
-
-  <a href="/groups/new" class="btn primary">
-    + Create Group
-  </a>
-</div>
-
-<div class="group-grid">
-  {% for g in groups %}
-  <a href="/groups/{{ g.id }}" class="group-card">
-    <h3>{{ g.name }}</h3>
-
-    <p class="meta">{{ g.member_count }} members</p>
-    <div class="group-balance">
-      {% if g["user_balance"] > 0 %}
-      <span class="group-positive">
-        You’ll receive ₹{{ g["user_balance"] }}
-      </span>
-      {% elif g["user_balance"] < 0 %}
-      <span class="group-negative">
-        You owe ₹{{ g["user_balance"] | abs }}
-      </span>
-      {% else %}
-      <span class="group-neutral">Settled</span>
-      {% endif %}
+  <!-- DIV 2: LEFT SIDEBAR : GROUPS -->
+  <aside class="ledger-sidebar">
+    <div class="sidebar-header">
+      <h3>
+        Your Groups
+        <span class="muted">({{ groups | length }})</span>
+      </h3>
+      <a href="/groups/new" class="btn new">+ New</a>
     </div>
 
-    <span class="enter"> View Group </span>
-  </a>
-  {% endfor %}
+    {% if groups %}
+      <div class="sidebar-groups">
+        {% for g in groups %}
+          <a href="/groups/{{ g.id }}" class="sidebar-group">
+            <span class="group-name">{{ g.name }}</span>
+
+            {% if g.member_count == 0 %}
+              <span class="group-meta neutral">No group members</span>
+            {% else %}
+              <span class="group-meta">
+                {{ g.member_count }} member{{ 's' if g.member_count > 1 else '' }}
+              </span>
+            {% endif %}
+          </a>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No groups yet</p>
+    {% endif %}
+  </aside>
+
+  <!-- DIV 3: USER SUMMARY (Top Right) -->
+  <div class="card user-summary">
+    <h2>Your Balance</h2>
+
+    {% if total_balance > 0 %}
+      <p class="balance-positive">
+        You’ll receive ₹{{ total_balance }}
+      </p>
+    {% elif total_balance < 0 %}
+      <p class="balance-negative">
+        You need to pay ₹{{ total_balance | abs }}
+      </p>
+    {% else %}
+      <p class="balance-settled">All settled 🎉</p>
+    {% endif %}
+  </div>
+
+  <!-- DIV 4: YOU OWE (Bottom Middle) -->
+  <div class="card card-owe">
+    <h3>You Owe</h3>
+
+    {% set owes = people_balances | selectattr("amount", "lt", 0) | list %}
+
+    {% if owes %}
+      {% for p in owes %}
+        <div class="row row-flex">
+          {{ p.name }}
+          <strong class="balance-negative">
+            ₹{{ p.amount | abs }}
+          </strong>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No pending Settlements🎉</p>
+    {% endif %}
+  </div>
+
+  <!-- DIV 5: YOU'LL GET (Bottom Right) -->
+  <div class="card card-get">
+    <h3>You’ll Get</h3>
+
+    {% set gets = people_balances | selectattr("amount", "gt", 0) | list %}
+
+    {% if gets %}
+      {% for p in gets %}
+        <div class="row row-flex">
+          {{ p.name }} 
+          <strong class="balance-positive">
+            ₹{{ p.amount }}
+          </strong>
+        </div>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No pending credits</p>
+    {% endif %}
+  </div>
+
 </div>
-{% else %}
-<div class="card">
-  <p>No groups yet.</p>
-  <p style="color: #6f6f6f; font-size: 14px">
-    Create a group to start tracking shared expenses.
-  </p>
-</div>
-{% endif %} {% endblock %}
+
+{% endblock %}
