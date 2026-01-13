@@ -1,3 +1,4 @@
+from click import group
 from flask import Blueprint, request, jsonify, session, render_template, redirect, flash
 from utils.decorators import login_required, admin_only
 from services.group_service import (
@@ -156,30 +157,36 @@ def create_group_page():
     # ✅ GET request
     return render_template("create_group.html", users=users)
 
-
 @groups_bp.route("/groups/<int:group_id>")
 @login_required
 def group_page(group_id):
     user_id = session.get("user_id")
-    
+
     try:
         from services.group_service import (
             is_user_member,
             get_group_display_data,
             UserNotMemberError
         )
-        
-        # Check if user is a member
+
         if not is_user_member(group_id, user_id):
             flash("You don't have access to this group", "error")
             return redirect("/dashboard")
-        
-        # Get all display data
+
         data = get_group_display_data(group_id, user_id)
-        
+
+        group = data["group"]
+        creator = User.query.get(group.created_by)
+
+        is_creator = (group.created_by == user_id)
+        is_admin = (session.get("role") == "admin")
+
         return render_template(
             "group.html",
-            group=data["group"],
+            group=group,
+            creator=creator,
+            is_creator=is_creator,
+            is_admin=is_admin,
             members=data["members"],
             expenses=data["expenses"],
             balances=data["balances"],
@@ -187,12 +194,17 @@ def group_page(group_id):
             suggestions=data["suggestions"],
             can_manage=data["can_manage"]
         )
+
     except GroupNotFoundError:
         flash("Group not found", "error")
         return redirect("/dashboard")
+
     except Exception as e:
+        db.session.rollback()
+        print("GROUP LOAD ERROR:", type(e), e)
         flash("Failed to load group", "error")
         return redirect("/dashboard")
+
 
 
 @groups_bp.route("/groups/<int:group_id>/members", methods=["GET", "POST"])

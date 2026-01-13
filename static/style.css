@@ -1072,3 +1072,20 @@ li {
   }
 }
 
+.badge {
+  font-size: 12px;
+  padding: 2px 6px;
+  border-radius: 6px;
+  margin-left: 6px;
+  font-weight: 500;
+}
+
+.badge-creator {
+  background: #e7f0ff;
+  color: #1d4ed8;
+}
+
+.badge-admin {
+  background: #fff3cd;
+  color: #92400e;
+}

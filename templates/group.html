@@ -5,7 +5,23 @@
 
 <!-- GROUP HEADER -->
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-  <h2>{{ group.name }}</h2>
+  <h2 class="group-title">
+  {{ group.name }}
+  {% if is_creator %}
+  <span class="badge badge-creator">Creator</span>
+
+{% elif is_admin %}
+  <span class="badge badge-admin">Admin</span>
+
+{% else %}
+  <span class="muted">
+    (Created by <strong>{{ creator.name }}</strong>)
+  </span>
+{% endif %}
+
+</h2>
+
+  
 
   {% if can_manage %}
   <div style="display:flex;gap:8px;align-items:center">
