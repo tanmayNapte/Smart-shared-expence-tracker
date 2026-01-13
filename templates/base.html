@@ -32,8 +32,9 @@
         <div class="nav-right">
           {% if current_user and current_user.role == "admin" %}
           <a href="/admin/create-user" class="btn primary">Create User</a>
-          {% endif %} {% if current_user %}
-          <span class="user-name">Logged User: {{ current_user.name }}</span>
+          {% endif %} 
+          {% if current_user %}
+          <span class="user-name">Username  : {{ current_user.name }}</span>
           <a href="/logout" class="btn logout">Logout</a>
           {% endif %}
         </div>

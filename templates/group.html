@@ -7,18 +7,16 @@
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
   <h2 class="group-title">
   {{ group.name }}
+  <span class="badge badge-muted">
+  <span>Created by {{ creator.name }}</span>
+    </span>
   {% if is_creator %}
-  <span class="badge badge-creator">Creator</span>
+    <span class="badge badge-creator">Creator</span>
+  {% endif %}
 
-{% elif is_admin %}
-  <span class="badge badge-admin">Admin</span>
-
-{% else %}
-  <span class="muted">
-    (Created by <strong>{{ creator.name }}</strong>)
-  </span>
-{% endif %}
-
+  {% if is_admin %}
+    <span class="badge badge-admin">Admin</span>
+  {% endif %}
 </h2>
 
   

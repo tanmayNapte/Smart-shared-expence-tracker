@@ -1089,3 +1089,13 @@ li {
   background: #fff3cd;
   color: #92400e;
 }
+
+.badge-muted {
+  background: #e7f0ff;
+  color: #1d4ed8;
+  border: 1px solid #ddd;
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-weight: 500;
+}
