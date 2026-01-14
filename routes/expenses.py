@@ -38,6 +38,29 @@ def api_add_expense():
         return jsonify({"error": "Failed to create expense"}), 500
 
 
+@expenses_bp.route("/expenses/new", methods=["GET"])
+@login_required
+def new_expense_page():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/login")
+        
+    group_id = request.args.get('group_id')
+    try:
+        if group_id:
+            group_id = int(group_id)
+    except:
+        group_id = None
+
+    try:
+        from services.group_service import get_user_groups
+        groups = get_user_groups(user_id)
+        return render_template("create_expense.html", groups=groups, selected_group_id=group_id)
+    except Exception as e:
+        flash("Failed to load groups for expense creation", "error")
+        return redirect("/dashboard")
+
+
 @expenses_bp.route("/expenses/add", methods=["POST"])
 @login_required
 def add_expense():
@@ -156,3 +179,15 @@ def delete_expense_route(expense_id):
             return redirect(f"/groups/{expense.group_id}")
         except:
             return redirect("/dashboard")
+
+
+@expenses_bp.route("/activity")
+@login_required
+def activity_page():
+    user_id = session.get("user_id")
+    
+    # Use the ledger service which breaks down balances by group
+    from services.ledger_service import get_user_net_balances_by_person
+    people_balances = get_user_net_balances_by_person(user_id)
+    
+    return render_template("activity.html", people_balances=people_balances)

@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, render_template, request, redirect
 from werkzeug.security import generate_password_hash
 from models import db, User
-from utils.decorators import admin_only
+from utils.decorators import admin_only, login_required
 
 users_bp = Blueprint("users", __name__)
 
@@ -32,3 +32,10 @@ def create_user():
         return redirect("/dashboard")
 
     return render_template("create_user.html")
+
+
+@users_bp.route("/profile")
+@login_required
+def profile_page():
+    return render_template("profile.html")
+

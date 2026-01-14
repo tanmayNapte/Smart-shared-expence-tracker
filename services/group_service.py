@@ -1,4 +1,13 @@
+"""
+Group Service - Business logic for group operations
 
+Rules:
+- No Flask (request, session, redirect, flash)
+- No decorators
+- Can use models and db
+- Can raise exceptions
+- Returns plain Python data
+"""
 from models import db, Group, GroupMember, User, Expense, ExpenseSplit, Settlement
 from sqlalchemy.orm import joinedload
 
@@ -162,27 +171,17 @@ def is_user_member(group_id, user_id):
 
 
 def get_group_members(group_id):
-    """
-    Get all members of a group.
-    
-    Args:
-        group_id: Group ID
-    
-    Returns:
-        List of User objects
-    
-    Raises:
-        GroupNotFoundError: If group doesn't exist
-    """
-    get_group_by_id(group_id)  # Validate group exists
-    
-    members = (
-        db.session.query(User)
+    group = Group.query.get(group_id)
+    if not group:
+        raise GroupNotFoundError()
+
+    return (
+        User.query
         .join(GroupMember)
         .filter(GroupMember.group_id == group_id)
         .all()
     )
-    return members
+
 
 
 def add_members_to_group(group_id, user_ids):
@@ -273,6 +272,20 @@ def delete_group_with_permission(group_id, user_id):
 
 
 def calculate_balances(group_id):
+    """
+    Calculate balances for all members in a group.
+    
+    Args:
+        group_id: Group ID
+    
+    Returns:
+        Dict mapping user_id to balance (float)
+        Positive balance = user is owed money
+        Negative balance = user owes money
+    
+    Raises:
+        GroupNotFoundError: If group doesn't exist
+    """
     get_group_by_id(group_id)  # Validate group exists
     
     balances = {}

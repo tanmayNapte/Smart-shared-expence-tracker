@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Activity{% endblock %}
+{% block main_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+
+    <aside class="ledger-sidebar">
+        <div class="sidebar-brand">
+            <!-- <a href="/dashboard"><h3>Ledger</h3></a> -->
+        </div>
+        <nav class="sidebar-nav">
+            <a href="/dashboard" class="nav-item">
+                <span class="icon">⊞</span> Dashboard
+            </a>
+            <a href="/groups" class="nav-item">
+                <span class="icon">👥</span> Groups
+            </a>
+            <a href="/activity" class="nav-item active">
+                <span class="icon">⚡</span> Activity
+            </a>
+            <a href="/profile" class="nav-item">
+                <span class="icon">👤</span> Profile
+            </a>
+        </nav>
+    </aside>
+
+    <main class="dashboard-main">
+        <h2 style="margin-bottom:20px;">Detailed Activity</h2>
+
+        <div class="card">
+            <h3>Balances with Friends</h3>
+            <p class="muted-text" style="margin-bottom:20px;">Net aggregate balances across all groups</p>
+
+            {% if people_balances %}
+            <div class="activity-feed">
+                {% for p in people_balances %}
+                <div class="activity-item">
+
+                    <div class="activity-icon {{ 'get' if p.amount > 0 else 'owe' }}">
+                        {{ '😺' if p.amount > 0 else '😿' }}
+                    </div>
+
+                    <div class="activity-details">
+                        <span class="activity-text">
+                            {% if p.amount > 0 %}
+                            {{ p.name }} owes you
+                            <strong>₹{{ p.amount }}</strong>
+                            <span class="muted-text">({{ p.group_name }})</span>
+                            {% else %}
+                            You owe {{ p.name }}
+                            <strong>₹{{ p.amount | abs }}</strong>
+                            <span class="muted-text">({{ p.group_name }})</span>
+                            {% endif %}
+                        </span>
+
+                        <span class="activity-time">Pending Balance</span>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div style="text-align:center; padding:40px; color:#aaa;">
+                <p>No activity yet.</p>
+            </div>
+            {% endif %}
+        </div>
+
+    </main>
+</div>
+{% endblock %}

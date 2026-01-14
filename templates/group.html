@@ -3,23 +3,14 @@
 
 <a href="/dashboard" class="link">← Back to Groups</a>
 
+
 <!-- GROUP HEADER -->
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;">
-  <h2 class="group-title">
-  {{ group.name }}
-  <span class="badge badge-muted">
-  <span>Created by {{ creator.name }}</span>
+  <h2>{{ group.name }}
+    <span class="badge badge-muted">
+      <span>Created by {{ creator.name }}</span>
     </span>
-  {% if is_creator %}
-    <span class="badge badge-creator">Creator</span>
-  {% endif %}
-
-  {% if is_admin %}
-    <span class="badge badge-admin">Admin</span>
-  {% endif %}
-</h2>
-
-  
+  </h2>
 
   {% if can_manage %}
   <div style="display:flex;gap:8px;align-items:center">
@@ -33,8 +24,7 @@
     </a>
 
     <form method="POST" action="/groups/{{ group.id }}/delete"
-          onsubmit="return confirm('Are you sure you want to delete this group?');"
-          style="margin:0">
+      onsubmit="return confirm('Are you sure you want to delete this group?');" style="margin:0">
       <button type="submit" class="btn danger">x Delete Group</button>
     </form>
 
@@ -63,8 +53,7 @@
       <strong>{{ b.name }}</strong>
       <p>₹{{ b.balance | abs }}</p>
       <small>
-        {% if b.balance > 0 %}gets back{% elif b.balance < 0 %}owes{% else %}settled{% endif %}
-      </small>
+        {% if b.balance > 0 %}gets back{% elif b.balance < 0 %}owes{% else %}settled{% endif %} </small>
     </div>
     {% endfor %}
   </div>
@@ -97,65 +86,33 @@
 </div>
 {% endif %}
 
-<!-- ADD EXPENSE + SETTLEMENT -->
+<!-- ADD EXPENSE + SETTLEMENT BUTTONS -->
 <div class="two-col">
 
   <!-- ADD EXPENSE -->
-  <div class="card">
-    <h3>Add Expense</h3>
-    <form method="post" action="/expenses/add">
-      <input type="hidden" name="group_id" value="{{ group.id }}">
-      <input name="amount" placeholder="Amount" required>
-      <input name="description" placeholder="Description">
-
-      <select name="paid_by" required>
-        <option value="">Paid by</option>
-        {% for m in members %}
-        <option value="{{ m.id }}">{{ m.name }}</option>
-        {% endfor %}
-      </select>
-
-      <button class="btn primary">+ Add Expense</button>
-    </form>
+  <div class="card"
+    style="text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:200px;">
+    <h3>Add New Expense</h3>
+    <p style="color:#6f6f6f; font-size:14px; margin-bottom:20px;">
+      Paid for something? Add it here.
+    </p>
+    <a href="/expenses/new?group_id={{ group.id }}" class="btn primary" style="width:100%; max-width:200px;">
+      + Add Expense
+    </a>
   </div>
 
-  <!-- RECORD SETTLEMENT (UX-IMPROVED) -->
-  <div class="card">
-    <h3>Record Settlement</h3>
-
-    <form method="post" action="/settlements/add">
-      <input type="hidden" name="group_id" value="{{ group.id }}">
-
-      <label>Payer</label>
-      <select name="payer_id" required>
-        <option value="">Select payer</option>
-        {% for m in members %}
-        <option value="{{ m.id }}" {% if current_user and m.id == current_user.id %}selected{% endif %}>
-          {{ m.name }}{% if current_user and m.id == current_user.id %} (You){% endif %}
-        </option>
-        {% endfor %}
-      </select>
-
-      <label>Receiver</label>
-      <select name="receiver_id" required>
-        <option value="">Select receiver</option>
-        {% for m in members %}
-        <option value="{{ m.id }}">
-          {{ m.name }}{% if current_user and m.id == current_user.id %} (You){% endif %}
-        </option>
-        {% endfor %}
-      </select>
-
-      <input name="amount" placeholder="Amount" required>
-
-      <button class="btn success">✔ Record Settlement</button>
-
-      <p style="font-size:12px;color:#6f6f6f;margin-top:8px;">
-        Settlement must involve you (payer or receiver).  
-        You can only settle up to the amount owed.
-      </p>
-    </form>
+  <!-- SETTLE UP -->
+  <div class="card"
+    style="text-align:center; display:flex; flex-direction:column; justify-content:center; align-items:center; min-height:200px;">
+    <h3>Settle Up</h3>
+    <p style="color:#6f6f6f; font-size:14px; margin-bottom:20px;">
+      Record a payment between members.
+    </p>
+    <a href="/settlements/new?group_id={{ group.id }}" class="btn success" style="width:100%; max-width:200px;">
+      $ Record Payment
+    </a>
   </div>
+
 </div>
 
 <!-- HISTORY -->
@@ -185,9 +142,9 @@
         <small style="color:#6f6f6f;">
           Paid by {{ e.payer_name }}
           {% if e.last_edited_by_name %}
-            | Edited by {{ e.last_edited_by_name }} {{ e.last_edited_at.strftime('%d %b %Y') if e.last_edited_at }}
+          | Edited by {{ e.last_edited_by_name }} {{ e.last_edited_at.strftime('%d %b %Y') if e.last_edited_at }}
           {% else %}
-            | Created {{ e.created_at.strftime('%d %b %Y') if e.created_at }}
+          | Created {{ e.created_at.strftime('%d %b %Y') if e.created_at }}
           {% endif %}
         </small>
       </div>
@@ -195,12 +152,10 @@
       {% if current_user and (e.created_by == current_user.id or can_manage) %}
       <div style="display:flex;gap:4px;">
         <a href="/expenses/{{ e.id }}/edit" class="btn secondary"
-           style="padding:4px 8px;font-size:12px;text-decoration:none;">Edit</a>
-        <form method="POST" action="/expenses/{{ e.id }}/delete"
-              style="margin:0"
-              onsubmit="return confirm('Are you sure you want to delete this expense?');">
-          <button type="submit" class="btn danger"
-                  style="padding:4px 8px;font-size:12px;">Delete</button>
+          style="padding:4px 8px;font-size:12px;text-decoration:none;">Edit</a>
+        <form method="POST" action="/expenses/{{ e.id }}/delete" style="margin:0"
+          onsubmit="return confirm('Are you sure you want to delete this expense?');">
+          <button type="submit" class="btn danger" style="padding:4px 8px;font-size:12px;">Delete</button>
         </form>
       </div>
       {% endif %}

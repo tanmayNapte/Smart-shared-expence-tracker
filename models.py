@@ -43,6 +43,10 @@ class Expense(db.Model):
     last_edited_at = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Relationships
+    group = db.relationship("Group", backref="expenses")
+    payer = db.relationship("User", foreign_keys=[paid_by], backref="expenses_paid")
+
 
 class ExpenseSplit(db.Model):
     __tablename__ = "expense_splits"
@@ -65,3 +69,8 @@ class Settlement(db.Model):
     receiver_id = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
     amount = db.Column(db.Float, nullable=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    # Relationships
+    group = db.relationship("Group")
+    payer = db.relationship("User", foreign_keys=[payer_id], backref="settlements_paid")
+    receiver = db.relationship("User", foreign_keys=[receiver_id], backref="settlements_received")

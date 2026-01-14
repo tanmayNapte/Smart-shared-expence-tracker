@@ -1,5 +1,5 @@
-from click import group
 from flask import Blueprint, request, jsonify, session, render_template, redirect, flash
+import traceback
 from utils.decorators import login_required, admin_only
 from services.group_service import (
     create_group,
@@ -49,11 +49,46 @@ def api_user_groups():
 @login_required
 def api_group_members(group_id):
     try:
-        members = get_group_members(group_id)
-        return jsonify([{"id": u.id, "name": u.name} for u in members])
-    except GroupNotFoundError:
-        return jsonify({"error": "Group not found"}), 404
+        user_id = session["user_id"]
+
+        # 1️⃣ Check group exists
+        from models import Group, GroupMember, User
+
+        group = Group.query.get(group_id)
+        if not group:
+            return jsonify({"error": "Group not found"}), 404
+
+        # 2️⃣ Check permission (Member, Creator, or Admin)
+        is_member = (
+            GroupMember.query
+            .filter_by(group_id=group_id, user_id=user_id)
+            .first()
+        )
+        
+        is_creator = (group.created_by == user_id)
+        
+        # Check admin role from DB since it's not in session
+        current_user = User.query.get(user_id)
+        is_admin = (current_user and current_user.role == "admin")
+
+        if not (is_member or is_creator or is_admin):
+            return jsonify({"error": "Group not found"}), 404
+
+        # 3️⃣ Fetch members directly (NO SERVICE)
+        members = (
+            User.query
+            .join(GroupMember)
+            .filter(GroupMember.group_id == group_id)
+            .all()
+        )
+
+        return jsonify([
+            {"id": u.id, "name": u.name}
+            for u in members
+        ])
+
     except Exception as e:
+        print("API MEMBERS ERROR:", e)
         return jsonify({"error": "Failed to get members"}), 500
 
 
@@ -91,7 +126,7 @@ def dashboard():
         groups = get_user_groups_with_counts(user_id)
         total_balance = sum(g.get("user_balance", 0) for g in groups)
         people_balances = get_user_net_balances_by_person(user_id)
-
+        
         return render_template(
             "dashboard.html",
             groups=groups,
@@ -104,6 +139,7 @@ def dashboard():
         db.session.rollback()
 
         print("DASHBOARD LOAD ERROR:", type(e), e)
+        print(traceback.format_exc())
         flash("Failed to load dashboard", "error")
 
         return render_template(
@@ -114,6 +150,24 @@ def dashboard():
         )
 
 
+@groups_bp.route("/groups")
+@login_required
+def groups_list_page():
+    user_id = session.get("user_id")
+    if not user_id:
+        return redirect("/login")
+
+    try:
+        from services.group_service import get_user_groups_with_counts
+        groups = get_user_groups_with_counts(user_id)
+        
+        return render_template("groups_list.html", groups=groups)
+    except Exception as e:
+        db.session.rollback()
+        print("DEBUG: Error in groups_list_page:")
+        print(traceback.format_exc())
+        flash(f"Failed to load groups: {str(e)}", "error")
+        return redirect("/dashboard")
 
 
 @groups_bp.route("/groups/new", methods=["GET", "POST"])

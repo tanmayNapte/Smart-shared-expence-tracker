@@ -1,5 +1,5 @@
 
-from models import db, Settlement
+from models import db, Settlement, User
 from services.group_service import is_user_member
 from services.group_service import InvalidGroupDataError
 
@@ -23,16 +23,15 @@ class SettlementPermissionError(Exception):
 
 
 def create_settlement(group_id, payer_id, receiver_id, amount, actor_id):
-
-    # 🔒 PERMISSION CHECK (FIRST)
-    if actor_id != payer_id and actor_id != receiver_id:
-        raise SettlementPermissionError(
-            "You can only record a settlement if you are the payer or the receiver."
-        )
-
     # ---------- VALIDATION ----------
     if not all([group_id, payer_id, receiver_id, amount]):
         raise InvalidSettlementDataError("All fields are required")
+
+    group_id = int(group_id)
+    payer_id = int(payer_id)
+    receiver_id = int(receiver_id)
+    amount = float(amount)
+    actor_id = int(actor_id)
 
     if payer_id == receiver_id:
         raise InvalidSettlementDataError("Payer and receiver cannot be the same")
@@ -43,16 +42,40 @@ def create_settlement(group_id, payer_id, receiver_id, amount, actor_id):
     # ---------- GROUP CHECK ----------
     from services.group_service import get_group_by_id
     try:
-        get_group_by_id(group_id)
+        group = get_group_by_id(group_id)
     except Exception:
         raise GroupNotFoundError(f"Group {group_id} not found")
 
+    # ---------- PERMISSION CHECK ----------
+    # Allow if actor is:
+    # 1. The Payer
+    # 2. The Receiver
+    # 3. The Group Creator
+    # 4. An Admin
+    
+    is_authorized = False
+    
+    if actor_id == payer_id or actor_id == receiver_id:
+        is_authorized = True
+    elif group.created_by == actor_id:
+        is_authorized = True
+    else:
+        # Check if admin
+        actor = User.query.get(actor_id)
+        if actor and actor.role == "admin":
+            is_authorized = True
+            
+    if not is_authorized:
+        raise SettlementPermissionError(
+            "You can only record a settlement if you are the payer, receiver, or group admin."
+        )
+
     # ---------- CREATE ----------
     settlement = Settlement(
-        group_id=int(group_id),
-        payer_id=int(payer_id),
-        receiver_id=int(receiver_id),
-        amount=float(amount)
+        group_id=group_id,
+        payer_id=payer_id,
+        receiver_id=receiver_id,
+        amount=amount
     )
 
     db.session.add(settlement)

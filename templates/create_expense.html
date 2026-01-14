@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Add Expense{% endblock %}
+{% block main_class %}full-width{% endblock %}
+
+{% block content %}
+<div class="dashboard-wrapper">
+  
+  <aside class="ledger-sidebar">
+    <div class="sidebar-brand">
+        <!-- <a href="/dashboard" style="text-decoration:none; color:inherit;">
+            <h3>Ledger</h3>
+        </a> -->
+    </div>
+    
+    <nav class="sidebar-nav">
+      <a href="/dashboard" class="nav-item">
+        <span class="icon">⊞</span> Dashboard
+      </a>
+      <a href="/groups" class="nav-item">
+        <span class="icon">👥</span> Groups
+      </a>
+      <a href="/activity" class="nav-item active">
+                <span class="icon">⚡</span> Activity
+            </a>
+      <a href="/profile" class="nav-item">
+        <span class="icon">👤</span> Profile
+      </a>
+    </nav>
+  </aside>
+
+  <main class="dashboard-main">
+    <div class="card" style="max-width: 600px; margin: 2rem auto;">
+      <h3>Add Expense</h3>
+      <p class="muted-text">Create an expense in a group</p>
+      
+      <form method="post" action="/expenses/add">
+        
+        <label>Group</label>
+        <select name="group_id" id="group_select" required onchange="loadMembers(this.value)">
+            <option value="">Select a group</option>
+            {% for g in groups %}
+            <option value="{{ g.id }}" {% if selected_group_id == g.id %}selected{% endif %}>{{ g.name }}</option>
+            {% endfor %}
+        </select>
+
+        <label>Amount</label>
+        <input name="amount" type="number" step="0.01" placeholder="0.00" required>
+
+        <label>Description</label>
+        <input name="description" placeholder="What was this for?">
+
+        <label>Paid By</label>
+        <select name="paid_by" id="paid_by_select" required>
+            <option value="">Select who paid</option>
+            <!-- Populated via JS or if already selected -->
+        </select>
+
+        <div style="margin-top: 2rem;">
+            <button class="btn primary" style="width: 100%;">Add Expense</button>
+        </div>
+      </form>
+    </div>
+  </main>
+</div>
+
+<script>
+async function loadMembers(groupId) {
+    const paidBySelect = document.getElementById('paid_by_select');
+    paidBySelect.innerHTML = '<option value="">Loading...</option>';
+    
+    if (!groupId) {
+        paidBySelect.innerHTML = '<option value="">Select a group first</option>';
+        return;
+    }
+
+    try {
+        const response = await fetch(`/api/groups/${groupId}/members`);
+        const members = await response.json();
+        
+        paidBySelect.innerHTML = '<option value="">Select who paid</option>';
+        members.forEach(member => {
+            const option = document.createElement('option');
+            option.value = member.id;
+            // Pre-select current user if logic allows, or simply show name
+            option.textContent = member.id == {{ current_user.id }} ? `${member.name} (You)` : member.name;
+            paidBySelect.appendChild(option);
+        });
+        
+        // Auto-select current user just for convenience
+        const currentUserOption = Array.from(paidBySelect.options).find(opt => opt.value == "{{ current_user.id }}");
+        if (currentUserOption) currentUserOption.selected = true;
+
+    } catch (error) {
+        console.error('Error loading members:', error);
+        paidBySelect.innerHTML = '<option value="">Error loading members</option>';
+    }
+}
+
+// If page loads with a group selected (e.g. from query param), load members
+document.addEventListener('DOMContentLoaded', () => {
+    const groupSelect = document.getElementById('group_select');
+    if (groupSelect.value) {
+        loadMembers(groupSelect.value);
+    }
+});
+</script>
+{% endblock %}
