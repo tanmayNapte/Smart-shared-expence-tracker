@@ -82,7 +82,7 @@
 
         <div class="activity-feed">
           {% if people_balances %}
-          {% for p in people_balances %}
+          {% for p in people_balances [:4]%}
           <div class="activity-item">
 
             <div class="activity-icon {{ 'get' if p.amount > 0 else 'owe' }}">

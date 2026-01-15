@@ -19,6 +19,33 @@ h3 {
   color: #1a1a1a; /* Softer black */
 }
 
+.balance {
+  border-radius: 10px;
+  padding: 14px;
+  background: #fff;
+}
+
+/* 🟢 gets back */
+.balance.positive {
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
+}
+
+/* 🔴 owes */
+.balance.negative {
+  box-shadow: 0 6px 0 rgba(80, 16, 16, 0.45);
+}
+
+/* ⚪ settled */
+.balance.zero {
+  box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
+}
+
+
+/* Optional: subtle lift on hover */
+.balance:hover {
+  transform: translateY(-2px);
+}
+
 .balance-positive,
 .balance-negative,
 .balance-settled,
