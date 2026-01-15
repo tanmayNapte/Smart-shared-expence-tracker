@@ -83,6 +83,7 @@ Smart_Expence_tracker/
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📄 License
+## 📄 Owner
 
-This project is licensed under the MIT License.
+Tanmay Napte @2026
+
