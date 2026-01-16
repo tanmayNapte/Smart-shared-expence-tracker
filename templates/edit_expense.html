@@ -1,9 +1,9 @@
 {% extends "base.html" %}
 {% block content %}
 
-<a href="/groups/{{ expense.group_id }}" class="link">← Back to Group</a>
 
 <div class="card" style="max-width: 520px; margin: 40px auto;">
+<a href="/groups/{{ expense.group_id }}" class="link">← Back to Group</a>
     <h2>Edit Expense</h2>
 
     {% with messages = get_flashed_messages(with_categories=true) %}

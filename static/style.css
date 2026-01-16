@@ -63,9 +63,16 @@ html {
 /* ---------- MAIN ---------- */
 main {
   padding: 40px;
-  max-width: 1200px;
-  margin: auto;
+  width: 100%;
+  margin: 0;
 }
+
+.main-content {
+  flex: 1;
+  padding: 40px;
+  display: block;
+}
+
 
 main.full-width {
   padding: 0;
@@ -959,10 +966,10 @@ li {
 
 .dashboard-wrapper {
   display: flex;
-  min-height: calc(100vh - 80px); /* Adjust based on valid navbar height if any, else 100vh */
-  gap: 32px;
-  position: relative;
+  min-height: calc(100vh - 80px);
+  width: 100%;
 }
+
 
 /* --- SIDEBAR --- */
 .ledger-sidebar {
@@ -971,10 +978,8 @@ li {
   background: #fffcf8;
   border-right: 1px solid #e3dfd8;
   padding: 32px 24px;
-  display: flex;
-  flex-direction: column;
-  height: auto; /* Or 100vh sticky */
 }
+
 
 .sidebar-brand h3 {
   font-size: 24px;
@@ -996,10 +1001,11 @@ li {
   gap: 12px;
   padding: 10px 16px;
   border-radius: 8px;
-  color: #6f6f6f;
+  color: #000000;
   font-weight: 500;
   transition: all 0.2s ease;
-  font-size: 15px;
+  font-size: 17px;
+  font-family: "Playfair Display", serif;
 }
 
 .nav-item:hover {
@@ -1074,7 +1080,7 @@ li {
   background: #ffffff;
   border: 1px solid #e3dfd8;
   border-radius: 12px;
-  padding: 24px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
@@ -1098,7 +1104,7 @@ li {
 
 .ledger-card .label {
   font-size: 14px;
-  color: #6f6f6f;
+  color: #000000;
   font-weight: 500;
 }
 
@@ -1109,7 +1115,7 @@ li {
 
 .ledger-card .card-amount {
   font-family: serif; /* Elegant font */
-  font-size: 32px;
+  font-size: 25px;
   font-weight: 600;
   color: #2f3e34;
 }
@@ -1370,27 +1376,9 @@ li {
 
 /* Wrapper: Use flex, align items to start (top) */
 /* Wrapper: Allow height to grow so browser scrolls */
-.dashboard-wrapper {
-  display: flex !important;
-  align-items: flex-start !important;
-  min-height: 100vh; /* Minimum full height */
-  height: auto !important; /* Allow growing */
-  width: 100%;
-  overflow: visible !important; /* No internal scroll */
-  background: #f5f2ec;
-}
 
-/* Sidebar: Sticky or full height relative to content */
-.ledger-sidebar {
-  width: 260px;
-  background: #fbf9f6;
-  border-right: 1px solid #efeae4;
-  display: flex !important;
-  flex-direction: column;
-  padding: 24px;
-  flex-shrink: 0;
-  min-height: 100vh; /* Match viewport at minimum */
-}
+
+
 
 /* Main Content: Grow naturally */
 .dashboard-main {

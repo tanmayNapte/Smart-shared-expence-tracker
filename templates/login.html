@@ -1,11 +1,19 @@
-{% extends "base.html" %} {% block content %}
+{% set show_navbar = False %}
+{% set show_sidebar = False %}
+{% extends "base.html" %}
+
+{% block content %}
 
 <div class="auth-card">
   <h3>Login</h3>
-  {% with messages = get_flashed_messages(with_categories=true) %} {% if
-  messages %} {% for category, message in messages %}
-  <div class="flash {{ category }}">{{ message }}</div>
-  {% endfor %} {% endif %} {% endwith %}
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+      <div class="flash {{ category }}">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
 
   <form method="post" action="/login">
     <input name="email" type="email" placeholder="Email" required />

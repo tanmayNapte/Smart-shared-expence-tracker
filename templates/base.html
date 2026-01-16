@@ -16,6 +16,8 @@
   </head>
 
   <body>
+    <!-- TOP NAVBAR -->
+    {% if show_navbar is not defined or show_navbar %}
     <header>
       <nav class="navbar">
         <div class="nav-left">
@@ -32,23 +34,58 @@
         <div class="nav-right">
           {% if current_user and current_user.role == "admin" %}
           <a href="/admin/create-user" class="btn primary">Create User</a>
-          {% endif %} {% if current_user %}
+          {% endif %}
+
+          {% if current_user %}
           <span class="user-name">Logged User: {{ current_user.name }}</span>
           <a href="/logout" class="btn logout">Logout</a>
           {% endif %}
         </div>
       </nav>
     </header>
+    {% endif %}
 
-    <main class="{% block main_class %}{% endblock %}">
-      {% with messages = get_flashed_messages(with_categories=true) %} {% if
-      messages %}
-      <div class="flash-container">
-        {% for category, message in messages %}
-        <div class="flash flash-{{ category }}">{{ message }}</div>
-        {% endfor %}
-      </div>
-      {% endif %} {% endwith %} {% block content %}{% endblock %}
-    </main>
+    <!-- LAYOUT WRAPPER -->
+    <div class="dashboard-wrapper">
+
+      {% if show_sidebar is not defined or show_sidebar %}
+      <!-- SIDEBAR -->
+      <aside class="ledger-sidebar">
+        <nav class="sidebar-nav">
+          <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+            <span class="icon">⊞</span> Dashboard
+          </a>
+
+          <a href="/groups" class="nav-item {% if request.path.startswith('/groups') %}active{% endif %}">
+            <span class="icon">👥</span> Groups
+          </a>
+
+          <a href="/activity" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
+            <span class="icon">⚡</span> Activity
+          </a>
+
+          <a href="/profile" class="nav-item {% if request.path.startswith('/profile') %}active{% endif %}">
+            <span class="icon">👤</span> Profile
+          </a>
+        </nav>
+      </aside>
+      {% endif %}
+
+      <!-- MAIN CONTENT -->
+      <main class="main-content {% block main_class %}{% endblock %}">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+          {% if messages %}
+          <div class="flash-container">
+            {% for category, message in messages %}
+            <div class="flash flash-{{ category }}">{{ message }}</div>
+            {% endfor %}
+          </div>
+          {% endif %}
+        {% endwith %}
+
+        {% block content %}{% endblock %}
+      </main>
+
+    </div>
   </body>
 </html>
