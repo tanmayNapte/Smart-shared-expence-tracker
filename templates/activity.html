@@ -3,53 +3,76 @@
 {% block main_class %}full-width{% endblock %}
 
 {% block content %}
-<div class="dashboard-wrapper">
 
- 
-  
-    <main class="dashboard-main">
-        <a href="/dashboard" class="link" style = "margin: 20px">← Back to Dashboard</a>  
-        <h2 style="margin-bottom:20px;">Detailed Activity</h2>
+<div style="padding: 20px;">
 
-        <div class="card">
-            <h3>Balances with Friends</h3>
-            <p class="muted-text" style="margin-bottom:20px;">Net aggregate balances across all groups</p>
+  <div style="max-width: 900px; margin: 0 auto;">
 
-            {% if people_balances %}
-            <div class="activity-feed">
-                {% for p in people_balances %}
-                <div class="activity-item">
+    <a href="/dashboard" class="link" style="display:inline-block; margin-bottom: 16px;">
+      ← Back to Dashboard
+    </a>
 
-                    <div class="activity-icon {{ 'get' if p.amount > 0 else 'owe' }}">
-                        {{ '😺' if p.amount > 0 else '😿' }}
-                    </div>
+    <div style="display:flex; justify-content: space-between; align-items:center; margin-bottom: 14px;">
+      <h2 style="margin: 0;">Activity</h2>
 
-                    <div class="activity-details">
-                        <span class="activity-text">
-                            {% if p.amount > 0 %}
-                            {{ p.name }} owes you
-                            <strong>₹{{ p.amount }}</strong>
-                            <span class="muted-text">({{ p.group_name }})</span>
-                            {% else %}
-                            You owe {{ p.name }}
-                            <strong>₹{{ p.amount | abs }}</strong>
-                            <span class="muted-text">({{ p.group_name }})</span>
-                            {% endif %}
-                        </span>
+      <!-- Filters -->
+      <div style="display:flex; gap: 8px;">
+        <a href="/activity?type=all" class="btn {% if filter_type == 'all' %}primary{% else %}secondary{% endif %}">
+          All
+        </a>
+        <a href="/activity?type=expense" class="btn {% if filter_type == 'expense' %}primary{% else %}secondary{% endif %}">
+          Expenses
+        </a>
+        <a href="/activity?type=settlement" class="btn {% if filter_type == 'settlement' %}primary{% else %}secondary{% endif %}">
+          Settlements
+        </a>
+      </div>
+    </div>
 
-                        <span class="activity-time">Pending Balance</span>
-                    </div>
+    <div class="card" style="padding: 18px;">
+      <p class="muted-text" style="margin: 0 0 18px 0;">
+        A timeline of expenses and settlements across your groups.
+      </p>
 
-                </div>
-                {% endfor %}
-            </div>
+      {% if activities %}
+        <div class="activity-feed">
+
+          {% for a in activities %}
+          <div class="activity-item">
+
+            {% if a.type == "expense" %}
+              <div class="activity-icon get">💸</div>
             {% else %}
-            <div style="text-align:center; padding:40px; color:#aaa;">
-                <p>No activity yet.</p>
-            </div>
+              <div class="activity-icon owe">🤝</div>
             {% endif %}
-        </div>
 
-    </main>
+            <div class="activity-details">
+              <div style="display:flex; justify-content: space-between; gap: 10px;">
+                <span class="activity-text">
+                  <strong>{{ a.title }}</strong>
+                  <div class="muted-text" style="font-size: 13px;">{{ a.subtitle }}</div>
+                  <div class="muted-text" style="font-size: 12px;">{{ a.meta }}</div>
+                </span>
+
+                <span class="muted-text" style="font-size: 12px; white-space: nowrap;">
+                  {{ a.time.strftime("%d %b %Y") if a.time else "" }}
+                </span>
+              </div>
+            </div>
+
+          </div>
+          {% endfor %}
+
+        </div>
+      {% else %}
+        <div style="text-align:center; padding:40px; color:#aaa;">
+          <p>No activity yet.</p>
+        </div>
+      {% endif %}
+    </div>
+
+  </div>
+
 </div>
+
 {% endblock %}

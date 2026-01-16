@@ -6,91 +6,106 @@
 
 <div style="width: 100%; padding: 20px;">
 
-  <!-- Back link aligned nicely -->
-  <div style="max-width: 720px; margin: 0 auto 16px auto;">
-    <a href="/dashboard" class="link">
-      ← Back to Dashboard
-    </a>
-  </div>
-
-  <!-- Center card properly -->
   <div style="display: flex; justify-content: center;">
-    <div class="card" style="width: 100%; max-width: 720px;">
+    <div style="width: 100%; max-width: 900px;">
 
-      <!-- TOP PROFILE HEADER -->
-      <div class="card-header"
-        style="justify-content: center; flex-direction: column; text-align: center; gap: 10px; padding: 28px;">
+      <!-- PROFILE HEADER -->
+      <div class="card" style="padding: 28px; display: flex; gap: 18px; align-items: center;">
 
-        <div style="width: 90px; height: 90px; background: #f3f4f6; border-radius: 50%;
+        <div style="width: 85px; height: 85px; background: #f3f4f6; border-radius: 50%;
                     display: flex; align-items: center; justify-content: center;
                     font-size: 2.2rem; font-weight: 700;">
           {{ current_user.name[0] | upper }}
         </div>
 
-        <h2 style="margin: 0;">{{ current_user.name }}</h2>
-        <p class="muted-text" style="margin: 0;">{{ current_user.email }}</p>
+        <div style="flex: 1;">
+          <h2 style="margin: 0;">{{ current_user.name }}</h2>
+          <p class="muted-text" style="margin: 4px 0 0 0;">{{ current_user.email }}</p>
 
-        <div style="margin-top: 10px;">
-          {% if current_user.role == "admin" %}
-            <span class="badge badge-admin">Admin</span>
+          <div style="margin-top: 10px;">
+            {% if current_user.role == "admin" %}
+              <span class="badge badge-admin">Admin</span>
+            {% else %}
+              <span class="badge badge-member">Member</span>
+            {% endif %}
+          </div>
+        </div>
+
+        <div style="text-align: right;">
+          {% if stats.net_position >= 0 %}
+            <div class="muted-text" style="font-size: 13px;">Net Position</div>
+            <div style="font-size: 22px; font-weight: 800; color: #15803d;">
+              +₹{{ "%.2f"|format(stats.net_position) }}
+            </div>
           {% else %}
-            <span class="badge badge-member">Member</span>
+            <div class="muted-text" style="font-size: 13px;">Net Position</div>
+            <div style="font-size: 22px; font-weight: 800; color: #b91c1c;">
+              -₹{{ "%.2f"|format(stats.net_position | abs) }}
+            </div>
           {% endif %}
         </div>
+
       </div>
 
-      <!-- STATS -->
-      <div style="padding: 24px; border-top: 1px solid #eee;">
-        <h3 style="margin: 0 0 14px 0;">Your Stats</h3>
+      <!-- PENDING ACTIONS -->
+      <div style="margin-top: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
 
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+        <!-- YOU SHOULD PAY -->
+        <div class="card" style="padding: 18px;">
+          <h3 style="margin: 0 0 12px 0;">You Should Pay</h3>
 
-          <div class="card" style="padding: 14px;">
-            <div class="muted-text" style="font-size: 13px;">Groups</div>
-            <div style="font-size: 22px; font-weight: 700;">{{ stats.groups_count }}</div>
-          </div>
+          {% if owe_list %}
+            {% for p in owe_list %}
+              <div style="display:flex; justify-content: space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid #eee;">
+                <div>
+                  <div style="font-weight: 700;">{{ p.name }}</div>
+                  {% if p.group_name %}
+                    <div class="muted-text" style="font-size: 12px;">{{ p.group_name }}</div>
+                  {% endif %}
+                </div>
 
-          <div class="card" style="padding: 14px;">
-            <div class="muted-text" style="font-size: 13px;">Expenses Added</div>
-            <div style="font-size: 22px; font-weight: 700;">{{ stats.expenses_count }}</div>
-          </div>
-
-          <div class="card" style="padding: 14px;">
-            <div class="muted-text" style="font-size: 13px;">Total Paid</div>
-            <div style="font-size: 22px; font-weight: 700;">
-              ₹{{ "%.2f"|format(stats.total_paid) }}
-            </div>
-          </div>
-
-          <div class="card" style="padding: 14px;">
-            <div class="muted-text" style="font-size: 13px;">Total Spent</div>
-            <div style="font-size: 22px; font-weight: 700;">
-              ₹{{ "%.2f"|format(stats.total_spent) }}
-            </div>
-          </div>
-
-          <div class="card" style="padding: 14px;">
-            <div class="muted-text" style="font-size: 13px;">You Owe</div>
-            <div style="font-size: 22px; font-weight: 700;">
-              ₹{{ "%.2f"|format(stats.total_you_owe) }}
-            </div>
-          </div>
-
-          <div class="card" style="padding: 14px;">
-            <div class="muted-text" style="font-size: 13px;">You Are Owed</div>
-            <div style="font-size: 22px; font-weight: 700;">
-              ₹{{ "%.2f"|format(stats.total_you_are_owed) }}
-            </div>
-          </div>
-
+                <div style="text-align:right;">
+                  <div style="font-weight: 800; color: #b91c1c;">₹{{ "%.2f"|format(p.amount) }}</div>
+                  <a href="/settlements" class="link" style="font-size: 12px;">Settle</a>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted-text" style="margin: 0;">No pending payments 🎉</p>
+          {% endif %}
         </div>
+
+        <!-- YOU SHOULD COLLECT -->
+        <div class="card" style="padding: 18px;">
+          <h3 style="margin: 0 0 12px 0;">You Should Collect</h3>
+
+          {% if owed_list %}
+            {% for p in owed_list %}
+              <div style="display:flex; justify-content: space-between; align-items:center; padding: 12px 0; border-bottom: 1px solid #eee;">
+                <div>
+                  <div style="font-weight: 700;">{{ p.name }}</div>
+                  {% if p.group_name %}
+                    <div class="muted-text" style="font-size: 12px;">{{ p.group_name }}</div>
+                  {% endif %}
+                </div>
+
+                <div style="text-align:right;">
+                  <div style="font-weight: 800; color: #15803d;">₹{{ "%.2f"|format(p.amount) }}</div>
+                  <a href="/create_settlement" class="link" style="font-size: 12px;">Settle</a>
+                </div>
+              </div>
+            {% endfor %}
+          {% else %}
+            <p class="muted-text" style="margin: 0;">No one owes you right now.</p>
+          {% endif %}
+        </div>
+
       </div>
 
-      <!-- LOGOUT -->
-      <div style="padding: 24px; border-top: 1px solid #eee; text-align: center;">
-        <a href="/logout" class="btn logout" style="width: 100%; justify-content: center;">
-          Log Out
-        </a>
+      <!-- ACCOUNT ACTIONS -->
+      <div class="card" style="margin-top: 18px; padding: 18px; display:flex; gap: 12px; justify-content: space-between; align-items: center;">
+        <a href="/dashboard" class="btn secondary">Back to Dashboard</a>
+        <a href="/logout" class="btn logout">Log Out</a>
       </div>
 
     </div>

@@ -1,4 +1,5 @@
 from flask import Blueprint, request, jsonify, redirect, flash, session, render_template
+from routes import settlements
 from utils.decorators import login_required
 from services.expense_service import (
     create_expense,
@@ -10,6 +11,9 @@ from services.expense_service import (
     ExpenseNotFoundError,
     PermissionError
 )
+from models import Expense, Settlement, User, GroupMember
+from sqlalchemy import desc
+
 
 expenses_bp = Blueprint("expenses", __name__)
 
@@ -181,13 +185,52 @@ def delete_expense_route(expense_id):
             return redirect("/dashboard")
 
 
+# totals must come from FULL net_list (not only top 5)
 @expenses_bp.route("/activity")
 @login_required
 def activity_page():
-    user_id = session.get("user_id")
-    
-    # Use the ledger service which breaks down balances by group
-    from services.ledger_service import get_user_net_balances_by_person
-    people_balances = get_user_net_balances_by_person(user_id)
-    
-    return render_template("activity.html", people_balances=people_balances)
+    filter_type = request.args.get("type", "all")  # all | expense | settlement
+    activities = []
+
+    # EXPENSE activities (SAFE)
+    if filter_type in ["all", "expense"]:
+        my_group_ids = [
+            gm.group_id for gm in GroupMember.query.filter_by(user_id=session["user_id"]).all()
+        ]
+
+        expenses = Expense.query.filter(Expense.group_id.in_(my_group_ids)) \
+            .order_by(Expense.id.desc()) \
+            .limit(30) \
+            .all()
+
+
+        for e in expenses:
+            paid_by_user = User.query.get(e.paid_by) if e.paid_by else None
+            created_by_user = User.query.get(e.created_by) if e.created_by else None
+
+            paid_by_name = paid_by_user.name if paid_by_user else "Unknown"
+            created_by_name = created_by_user.name if created_by_user else "Unknown"
+
+            activities.append({
+                "type": "expense",
+                "title": f"{paid_by_name} paid ₹{e.amount}",
+                "subtitle": e.description or "Expense added",
+                "meta": f"Created by {created_by_name}",
+                "time": getattr(e, "created_at", None)
+            })
+
+    # For now settlements disabled until we confirm model fields
+    # if filter_type in ["all", "settlement"]:
+    #     settlements = Settlement.query.order_by(Settlement.id.desc()).limit(30).all()
+    #     for s in settlements:
+    #         activities.append({
+    #             "type": "settlement",
+    #             "title": f"Settlement ₹{s.amount}",
+    #             "subtitle": "Settlement done",
+    #             "meta": "Settlement",
+    #             "time": getattr(s, "created_at", None)
+    #         })
+
+    activities.sort(key=lambda x: x["time"] or 0, reverse=True)
+
+    return render_template("activity.html", activities=activities, filter_type=filter_type)
