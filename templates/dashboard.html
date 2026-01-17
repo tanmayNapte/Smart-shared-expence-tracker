@@ -59,41 +59,45 @@
     <div class="dashboard-content-grid">
 
       <!-- RECENT ACTIVITY -->
-      <div class="activity-section" id="recent-activity">
-        <h3>Recent Activity</h3>
+      <div class="activity-feed">
+  {% if activity_feed %}
+    {% for item in activity_feed %}
+      <div class="activity-item">
 
-        <div class="activity-feed">
-          {% if people_balances %}
-          {% for p in people_balances [:4]%}
-          <div class="activity-item">
+        {% if item.type == "settlement" %}
+          <div class="activity-icon settlement">🤝</div>
 
-            <div class="activity-icon {{ 'get' if p.amount > 0 else 'owe' }}">
-              {{ '😺' if p.amount > 0 else '😿' }}
-            </div>
-
-            <div class="activity-details">
-              <span class="activity-text">
-                {% if p.amount > 0 %}
-                {{ p.name }} owes you
-                <strong>₹{{ p.amount }}</strong>
-                <span class="muted-text">({{ p.group_name }})</span>
-                {% else %}
-                You owe {{ p.name }}
-                <strong>₹{{ p.amount | abs }}</strong>
-                <span class="muted-text">({{ p.group_name }})</span>
-                {% endif %}
-              </span>
-
-              <span class="activity-time">Pending Balance</span>
-            </div>
-
+          <div class="activity-details">
+            <span class="activity-text">
+              Settlement: <strong>{{ item.payer_name }}</strong> paid
+              <strong>{{ item.receiver_name }}</strong>
+              <strong>₹{{ "%.2f"|format(item.amount) }}</strong>
+              <span class="muted-text">({{ item.group_name }})</span>
+            </span>
+            <span class="activity-time">Settlement Recorded</span>
           </div>
-          {% endfor %}
-          {% else %}
-          <p class="muted-text">No recent activity</p>
-          {% endif %}
-        </div>
+
+        {% else %}
+          <div class="activity-icon expense">💸</div>
+
+          <div class="activity-details">
+            <span class="activity-text">
+              Expense Added:
+              <strong>{{ item.title }}</strong>
+              <strong>₹{{ "%.2f"|format(item.amount) }}</strong>
+              <span class="muted-text">({{ item.group_name }})</span>
+            </span>
+            <span class="activity-time">Expense</span>
+          </div>
+        {% endif %}
+
       </div>
+    {% endfor %}
+  {% else %}
+    <p class="muted-text">No recent activity</p>
+  {% endif %}
+</div>
+
 
       <!-- QUICK ACTIONS -->
       <div class="actions-section">

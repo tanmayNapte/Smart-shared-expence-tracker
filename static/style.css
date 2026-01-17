@@ -9,7 +9,6 @@
   font-style: normal;
 }
 
-
 body {
   margin: 0;
   padding: 0;
@@ -27,12 +26,6 @@ h3 {
   color: #1a1a1a; /* Softer black */
 }
 
-.balance {
-  border-radius: 10px;
-  padding: 14px;
-  background: #fff;
-}
-
 /* 🟢 gets back */
 .balance.positive {
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.45);
@@ -47,7 +40,6 @@ h3 {
 .balance.zero {
   box-shadow: 0 6px 0 rgba(0, 0, 0, 0.25);
 }
-
 
 /* Optional: subtle lift on hover */
 .balance:hover {
@@ -81,15 +73,12 @@ main {
   display: block;
 }
 
-
 main.full-width {
   padding: 0;
   max-width: none;
   margin: 0;
-  display: block; 
+  display: block;
 }
-
-
 
 /* ---------- LINKS ---------- */
 a {
@@ -137,7 +126,6 @@ a {
   color: #ffffff;
 }
 
-
 .btn.primary:hover {
   background: #243229;
 }
@@ -157,13 +145,12 @@ a {
 }
 
 .btn.logout {
-  background: #8a2828;
-  border: 1px solid #d2c4b6;
-  color: #090909;
+    background: #4f0000;
+  color: #fff;
 }
 
 .btn.logout:hover {
-  background: #f3ede6;
+  background: #ab0e0e;
   border-color: #b8a898;
 }
 
@@ -185,7 +172,8 @@ a {
   margin-bottom: 24px;
   border: 1px solid #dcd6cb; /* Slightly darker, cleaner border */
   transition: box-shadow 0.2s ease;
-  box-shadow: 0 1px 3px rgba(45, 62, 80, 0.05), 0 10px 25px -5px rgba(45, 62, 80, 0.06); /* Soft, diffused luxury shadow */
+  box-shadow: 0 1px 3px rgba(45, 62, 80, 0.05),
+    0 10px 25px -5px rgba(45, 62, 80, 0.06); /* Soft, diffused luxury shadow */
 }
 
 .card:hover {
@@ -299,14 +287,12 @@ label {
   color: #2b2b2b;
 }
 
-
 .balance p {
   font-family: serif;
   font-size: 17px;
   font-weight: 500;
   margin: 4px 0;
 }
-
 
 .balance.zero {
   border-left: 4px solid #050807;
@@ -326,7 +312,7 @@ label {
 }
 
 .balance-negative {
-  font-family: 'Times New Roman', serif;
+  font-family: "Times New Roman", serif;
   color: #b42318;
   font-size: 17px;
   font-weight: 500;
@@ -425,7 +411,7 @@ li {
 }
 
 .user-name {
-  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
   font-size: 14px;
   color: #000000;
   font-weight: 500;
@@ -790,7 +776,7 @@ li {
 }
 
 .settlement-amount {
-  font-family:  serif;
+  font-family: serif;
   font-weight: 600;
   font-size: 18px;
   color: #2f3e34;
@@ -800,7 +786,7 @@ li {
 .recent-expense-amount,
 .card-amount,
 .amount {
-  font-family:  serif;
+  font-family: serif;
   font-weight: 600;
   font-size: 18px;
   color: #2f3e34;
@@ -980,7 +966,6 @@ li {
   width: 100%;
 }
 
-
 /* --- SIDEBAR --- */
 .ledger-sidebar {
   width: 260px;
@@ -989,7 +974,6 @@ li {
   border-right: 1px solid #e3dfd8;
   padding: 32px 24px;
 }
-
 
 .sidebar-brand h3 {
   font-size: 24px;
@@ -1048,7 +1032,6 @@ li {
   margin-bottom: 16px;
 }
 
-
 .mini-group-link {
   display: flex;
   align-items: center;
@@ -1073,11 +1056,11 @@ li {
 }
 
 /* Settle button (small) */
-.btn-settle-mini{
+.btn-settle-mini {
   padding: 6px 12px;
   border: none;
   border-radius: 5px;
-  background: #05141F;
+  background: #05141f;
   color: #fff;
   font-size: 12px;
   font-weight: 700;
@@ -1085,17 +1068,16 @@ li {
   transition: 0.2s ease;
 }
 
-.btn-settle-mini:hover{
+.btn-settle-mini:hover {
   /* transform: translateY(-1px); */
   /* opacity: 0.92; */
-  background: #232323 ;
+  background: #232323;
 }
 
-.btn-settle-mini:active{
+.btn-settle-mini:active {
   transform: translateY(0px);
   opacity: 0.85;
 }
-
 
 /* --- MAIN MAIN --- */
 .dashboard-main {
@@ -1121,14 +1103,14 @@ li {
   flex-direction: column;
   justify-content: space-between;
   min-height: 140px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
   position: relative;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ledger-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
 }
 
 .ledger-card .card-header {
@@ -1176,9 +1158,12 @@ li {
 .neutral-card .card-amount {
   color: #2f3e34;
 }
-.neutral-card .card-amount.positive { color: #067647; }
-.neutral-card .card-amount.negative { color: #b42318; }
-
+.neutral-card .card-amount.positive {
+  color: #067647;
+}
+.neutral-card .card-amount.negative {
+  color: #b42318;
+}
 
 /* Urgency Tag */
 .urgency-tag {
@@ -1191,7 +1176,6 @@ li {
   display: inline-block;
   font-weight: 500;
 }
-
 
 /* --- CONTENT GRID --- */
 .dashboard-content-grid {
@@ -1238,11 +1222,22 @@ li {
   flex-shrink: 0;
 }
 
-.activity-icon.expense { background: #eef2f6; color: #1a2652; }
-.activity-icon.settlement { background: #ecfdf5; color: #067647; }
-.activity-icon.owe { background: #fef2f2; color: #b91c1c; }
-.activity-icon.get { background: #f0fdf4; color: #15803d; }
-
+.activity-icon.expense {
+  background: #eef2f6;
+  color: #1a2652;
+}
+.activity-icon.settlement {
+  background: #ecfdf5;
+  color: #067647;
+}
+.activity-icon.owe {
+  background: #fef2f2;
+  color: #b91c1c;
+}
+.activity-icon.get {
+  background: #f0fdf4;
+  color: #15803d;
+}
 
 .activity-details {
   display: flex;
@@ -1296,7 +1291,6 @@ li {
   flex-direction: column;
   gap: 10px;
 }
-
 
 .action-btn {
   text-align: center;
@@ -1354,29 +1348,28 @@ li {
   opacity: 0.8;
 }
 
-
 /* --- RESPONSIVE --- */
 @media (max-width: 900px) {
   .dashboard-wrapper {
     flex-direction: column;
   }
-  
+
   .ledger-sidebar {
     width: 100%;
     border-right: none;
     border-bottom: 1px solid #e3dfd8;
     padding: 16px;
   }
-  
+
   .dashboard-main {
     padding: 24px;
   }
-  
+
   .summary-cards {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .dashboard-content-grid {
     grid-template-columns: 1fr;
     gap: 32px;
@@ -1395,27 +1388,22 @@ li {
 
 /* WebKit (Chrome, Edge, Safari) */
 .activity-feed::-webkit-scrollbar {
-  width: 5px;              /* thin */
+  width: 5px; /* thin */
 }
 
 .activity-feed::-webkit-scrollbar-thumb {
   background-color: rgba(0, 0, 0, 0.35);
-  border-radius: 999px;    /* fully rounded */
+  border-radius: 999px; /* fully rounded */
 }
 
 .activity-feed::-webkit-scrollbar-track {
   background: transparent;
 }
 
-
-
 /* --- FORCE TOP ALIGNMENT OVERRIDES --- */
 
 /* Wrapper: Use flex, align items to start (top) */
 /* Wrapper: Allow height to grow so browser scrolls */
-
-
-
 
 /* Main Content: Grow naturally */
 .dashboard-main {
@@ -1435,7 +1423,6 @@ main.full-width {
   height: auto !important;
   min-height: 100%;
 }
-
 
 .badge {
   font-size: 12px;
@@ -1463,4 +1450,4 @@ main.full-width {
   padding: 4px 8px;
   border-radius: 999px;
   font-weight: 500;
-} 
+}

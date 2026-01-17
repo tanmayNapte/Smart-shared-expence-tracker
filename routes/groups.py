@@ -13,6 +13,8 @@ from services.group_service import (
 )
 from models import db, User
 from services.ledger_service import get_user_net_balances_by_person
+from services.activity_service import get_activity_feed
+
 
 
 groups_bp = Blueprint("groups", __name__)
@@ -118,26 +120,29 @@ def dashboard():
     groups = []
     total_balance = 0
     people_balances = []
+    activity_feed = []
 
     try:
         from services.group_service import get_user_groups_with_counts
         from services.ledger_service import get_user_net_balances_by_person
+        from services.activity_service import get_activity_feed
 
         groups = get_user_groups_with_counts(user_id)
         total_balance = sum(g.get("user_balance", 0) for g in groups)
         people_balances = get_user_net_balances_by_person(user_id)
-        
+
+        activity_feed = get_activity_feed(user_id, limit=10)
+
         return render_template(
             "dashboard.html",
             groups=groups,
             total_balance=total_balance,
-            people_balances=people_balances
+            people_balances=people_balances,
+            activity_feed=activity_feed
         )
 
     except Exception as e:
-        # 🔴 THIS IS THE KEY LINE
         db.session.rollback()
-
         print("DASHBOARD LOAD ERROR:", type(e), e)
         print(traceback.format_exc())
         flash("Failed to load dashboard", "error")
@@ -146,8 +151,10 @@ def dashboard():
             "dashboard.html",
             groups=groups,
             total_balance=total_balance,
-            people_balances=people_balances
+            people_balances=people_balances,
+            activity_feed=activity_feed
         )
+
 
 
 @groups_bp.route("/groups")
