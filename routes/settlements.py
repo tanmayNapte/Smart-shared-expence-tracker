@@ -103,3 +103,49 @@ def add_settlement():
 
 
     return redirect(f"/groups/{group_id}")
+
+@settlements_bp.route("/settlements/quick", methods=["POST"])
+@login_required
+def quick_settle_from_profile():
+    """
+    Called from Profile page settle button.
+    It records settlement and redirects back to profile.
+    """
+
+    actor_id = session.get("user_id")
+    if not actor_id:
+        return redirect("/login")
+
+    print("FORM DATA:", request.form)
+
+    
+    try:
+        group_id = int(request.form.get("group_id"))
+        payer_id = int(request.form.get("payer_id"))
+        receiver_id = int(request.form.get("receiver_id"))
+        amount = float(request.form.get("amount"))
+    except (ValueError, TypeError):
+        flash("Invalid settlement request from profile.", "error")
+        return redirect("/profile")
+
+    try:
+        create_settlement(
+            group_id=group_id,
+            payer_id=payer_id,
+            receiver_id=receiver_id,
+            amount=amount,
+            actor_id=actor_id
+        )
+        flash("Settlement recorded successfully ✅", "success")
+
+    except SettlementPermissionError:
+        flash("You can only settle if you are payer or receiver.", "error")
+
+    except (InvalidSettlementDataError, GroupNotFoundError) as e:
+        flash(str(e), "error")
+
+    except Exception as e:
+        print("ACTUAL ERROR:", type(e), e)
+        flash("Failed to record settlement.", "error")
+
+    return redirect("/profile")

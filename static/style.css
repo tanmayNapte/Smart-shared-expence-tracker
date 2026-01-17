@@ -2,6 +2,14 @@
   box-sizing: border-box;
 }
 
+@font-face {
+  font-family: "Okaluera";
+  src: url("/static/fonts/Okaluera.otf") format("opentype");
+  font-weight: bolder;
+  font-style: normal;
+}
+
+
 body {
   margin: 0;
   padding: 0;
@@ -90,13 +98,13 @@ a {
 }
 
 .link {
-  font-size: 14px;
-  color: #6b4f3f;
+  font-size: 15px;
+  color: #000000;
   transition: color 0.2s ease;
 }
 
 .link:hover {
-  color: #5a4033;
+  color: #441010;
 }
 
 /* ---------- BUTTONS ---------- */
@@ -404,11 +412,12 @@ li {
 }
 
 .brand-text {
-  font-family: "Playfair Display", serif;
-  font-size: 30px;
+  font-family: "Okaluera";
+  font-size: 35px;
   font-weight: 700;
   line-height: 1;
-  color: #2f3e34;
+  color: #000000;
+  letter-spacing: 0.2ch;
 }
 
 .brand:hover {
@@ -416,6 +425,7 @@ li {
 }
 
 .user-name {
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   font-size: 14px;
   color: #000000;
   font-weight: 500;
@@ -1038,12 +1048,13 @@ li {
   margin-bottom: 16px;
 }
 
+
 .mini-group-link {
   display: flex;
   align-items: center;
   gap: 10px;
   padding: 8px 10px;
-  color: #5a4f46;
+  color: #a47a07bb;
   font-size: 14px;
   border-radius: 6px;
   transition: background 0.2s ease;
@@ -1060,6 +1071,31 @@ li {
   border-radius: 50%;
   background: #d4c5b6;
 }
+
+/* Settle button (small) */
+.btn-settle-mini{
+  padding: 6px 12px;
+  border: none;
+  border-radius: 5px;
+  background: #05141F;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: 0.2s ease;
+}
+
+.btn-settle-mini:hover{
+  /* transform: translateY(-1px); */
+  /* opacity: 0.92; */
+  background: #232323 ;
+}
+
+.btn-settle-mini:active{
+  transform: translateY(0px);
+  opacity: 0.85;
+}
+
 
 /* --- MAIN MAIN --- */
 .dashboard-main {
@@ -1260,6 +1296,7 @@ li {
   flex-direction: column;
   gap: 10px;
 }
+
 
 .action-btn {
   text-align: center;

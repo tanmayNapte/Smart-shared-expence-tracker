@@ -76,9 +76,11 @@ def get_user_net_balances_by_person(user_id):
         if abs(amount) > 0.01:
             result.append({
                 "user_id": uid,
+                "group_id": gid,  # ✅ ADD THIS
                 "name": user_map[uid].name,
                 "group_name": group_map[gid].name,
                 "amount": round(amount, 2)
             })
+
 
     return result

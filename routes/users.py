@@ -1,3 +1,4 @@
+from os import name
 from flask import Blueprint, jsonify, render_template, request, redirect, session
 from werkzeug.security import generate_password_hash
 
@@ -42,47 +43,49 @@ def create_user():
 def profile_page():
     user_id = session["user_id"]
 
-    # this returns LIST in your project
     net_list = get_user_net_balances_by_person(user_id)
 
     owe_list = []
     owed_list = []
 
-    # Split into owe / owed (Top 5 each)
+    # Build owe/owed lists
     for row in net_list:
-        amt = row.get("amount", 0)
+        amt = float(row.get("amount", 0))
 
         if amt < 0:
             owe_list.append({
-                "name": row.get("name", "Unknown"),
-                "amount": abs(float(amt)),
-                "group_name": row.get("group_name", None),
+                "user_id": row["user_id"],
+                "group_id": row["group_id"],
+                "name": row["name"],
+                "amount": abs(amt),
+                "group_name": row["group_name"]
             })
+
         elif amt > 0:
             owed_list.append({
-                "name": row.get("name", "Unknown"),
-                "amount": float(amt),
-                "group_name": row.get("group_name", None),
+                "user_id": row["user_id"],
+                "group_id": row["group_id"],
+                "name": row["name"],
+                "amount": amt,
+                "group_name": row["group_name"]
             })
 
-    # Sort big amounts first
-# totals must come from FULL net_list (not only top 5)
-        total_you_owe = 0
-        total_you_are_owed = 0
+    # totals must come from FULL net_list (not only top 5)
+    total_you_owe = 0
+    total_you_are_owed = 0
 
-        for row in net_list:
-            amt = float(row.get("amount", 0))
-            if amt < 0:
-                total_you_owe += abs(amt)
-            elif amt > 0:
-                total_you_are_owed += amt
+    for row in net_list:
+        amt = float(row.get("amount", 0))
+        if amt < 0:
+            total_you_owe += abs(amt)
+        elif amt > 0:
+            total_you_are_owed += amt
 
-        net_position = total_you_are_owed - total_you_owe
+    net_position = total_you_are_owed - total_you_owe
 
-        # only LIMIT lists for UI display
-        owe_list = owe_list[:5]
-        owed_list = owed_list[:5]
-
+    # show only top 5 in UI
+    owe_list = owe_list[:5]
+    owed_list = owed_list[:5]
 
     stats = {
         "total_you_owe": float(total_you_owe),
