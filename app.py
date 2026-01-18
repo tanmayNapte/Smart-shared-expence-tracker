@@ -7,6 +7,7 @@ from routes.users import users_bp
 from routes.groups import groups_bp
 from routes.expenses import expenses_bp
 from routes.settlements import settlements_bp
+from routes.debug import debug_bp
 
 app = Flask(__name__)
 app.config.from_object(Config)
@@ -24,7 +25,7 @@ app.register_blueprint(users_bp)
 app.register_blueprint(groups_bp)
 app.register_blueprint(expenses_bp)
 app.register_blueprint(settlements_bp)
-
+app.register_blueprint(debug_bp)
 with app.app_context():
     db.create_all()
 

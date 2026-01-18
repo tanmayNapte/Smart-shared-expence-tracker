@@ -1559,10 +1559,10 @@ main.full-width {
   align-items: center;
   justify-content: flex-start;
 
-  width: 45px;
-  height: 45px;
+  width: 35px;
+  height: 35px;
   border: none;
-  border-radius: 50%;
+  border-radius: 20%;
   cursor: pointer;
 
   position: relative;
@@ -1609,7 +1609,7 @@ main.full-width {
 /* hover expand */
 .Btn:hover {
   width: 100px;
-  border-radius: 40px;
+  border-radius: 20% ;
 }
 
   .Btn:hover .sign {
@@ -1777,7 +1777,7 @@ main.full-width {
 
 /* SETTLE BUTTON (clean + matches theme) */
 .settle-btn{
-  font-family:Calibri (Body);
+  font-family:Segoe UI;
   padding: 6px 12px;
   border-radius: 10px;
   font-size: 12px;

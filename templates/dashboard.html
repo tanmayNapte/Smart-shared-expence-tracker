@@ -115,25 +115,21 @@ block content %}
         + Create User
       </a>
       {% endif %}
-
     </div>
   </div>
-</div>
-
-
-        <!-- URGENCY ALERT -->
-        {% if total_owe > 0 %}
+   {% if total_owe > 0 %}
         <div class="alert-card">
           <div class="alert-icon">⚠️</div>
           <div class="alert-content">
             <strong>Outstanding Debt</strong>
             <p>You owe a total of ₹{{ total_owe }}. Please settle up soon.</p>
-            <div class="alert-meta">Last settlement: 14 days ago</div>
           </div>
         </div>
         {% endif %}
-      </div>
-    </div>
+</div>
+
+
+
   </main>
 </div>
 
