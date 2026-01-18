@@ -1,191 +1,127 @@
-{% extends "base.html" %} {% block title %}Profile{% endblock %} {% block
-main_class %}full-width{% endblock %} {% block content %}
+{% extends "base.html" %}
+{% block title %}Profile{% endblock %}
+{% block main_class %}full-width{% endblock %}
 
-<div style="width: 100%; padding: 20px">
-    <a href="/dashboard" class="link back" style = "margin-top: 20px">← Back to Dashboard</a>
-  <div style="display: flex; justify-content: center">
-    <div style="width: 100%; max-width: 900px">
-      <!-- PROFILE HEADER -->
-       
-      <div
-        class="card"
-        style="padding: 28px; display: flex; gap: 18px; align-items: center"
-      >
-              
-        <div
-          style="
-            width: 85px;
-            height: 85px;
-            background: #f3f4f6;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.2rem;
-            font-weight: 700;
-          "
-        >
-          {{ current_user.name[0] | upper }}
-        </div>
+{% block content %}
 
-        <div style="flex: 1">
-          <h2 style="margin: 0">{{ current_user.name }}</h2>
-          <p class="muted-text" style="margin: 4px 0 0 0">
-            {{ current_user.email }}
-          </p>
+<div class="profile-page">
+  <a href="/dashboard" class="link back">← Back to Dashboard</a>
 
-          <div style="margin-top: 10px">
-            {% if current_user.role == "admin" %}
-            <span class="badge badge-admin">Admin</span>
-            {% else %}
-            <span class="badge badge-member">Member</span>
-            {% endif %}
-          </div>
-        </div>
+  <div class="profile-container">
 
-        <div style="text-align: right">
-          {% if stats.net_position >= 0 %}
-          <div class="muted-text" style="font-size: 13px">Net Position</div>
-          <div style="font-size: 22px; font-weight: 800; color: #15803d">
-            +₹{{ "%.2f"|format(stats.net_position) }}
-          </div>
+    <!-- PROFILE HEADER -->
+    <div class="card profile-header">
+      <div class="profile-avatar">
+        {{ current_user.name[0] | upper }}
+      </div>
+
+      <div class="profile-info">
+        <h2 class="profile-name">{{ current_user.name }}</h2>
+        <p class="muted-text profile-email">{{ current_user.email }}</p>
+
+        <div class="profile-role">
+          {% if current_user.role == "admin" %}
+          <span class="badge badge-admin">Admin</span>
           {% else %}
-          <div class="muted-text" style="font-size: 13px">Net Position</div>
-          <div style="font-size: 22px; font-weight: 800; color: #b91c1c">
-            -₹{{ "%.2f"|format(stats.net_position | abs) }}
-          </div>
+          <span class="badge badge-member">Member</span>
           {% endif %}
         </div>
       </div>
 
-      <!-- PENDING ACTIONS -->
-      <div
-        style="
-          margin-top: 18px;
-          display: grid;
-          grid-template-columns: 1fr 1fr;
-          gap: 16px;
-        "
-      >
-        <!-- YOU SHOULD PAY -->
-        <div class="card" style="padding: 18px">
-          <h3 style="margin: 0 0 12px 0">You Should Pay</h3>
+      <div class="profile-net">
+        <div class="muted-text profile-net-label">Net Position</div>
 
-          {% if owe_list %} {% for p in owe_list %}
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 12px 0;
-              border-bottom: 1px solid #eee;
-            "
-          >
-            <div>
-              <div style="font-weight: 700">{{ p.name }}</div>
+        {% if stats.net_position >= 0 %}
+        <div class="profile-net-amount positive">
+          +₹{{ "%.2f"|format(stats.net_position) }}
+        </div>
+        {% else %}
+        <div class="profile-net-amount negative">
+          -₹{{ "%.2f"|format(stats.net_position | abs) }}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- PENDING ACTIONS -->
+    <div class="profile-grid">
+
+      <!-- YOU SHOULD PAY -->
+      <div class="card profile-section">
+        <h3 class="section-title">You Should Pay</h3>
+
+        {% if owe_list %}
+          {% for p in owe_list %}
+          <div class="settle-row">
+            <div class="settle-left">
+              <div class="member-name">{{ p.name }}</div>
               {% if p.group_name %}
-              <div class="muted-text" style="font-size: 12px">
-                {{ p.group_name }}
-              </div>
+              <div class="meta">{{ p.group_name }}</div>
               {% endif %}
             </div>
 
-            <div style="text-align: right">
-              <div style="font-weight: 800; color: #b91c1c">
-                ₹{{ "%.2f"|format(p.amount) }}
-              </div>
+            <div class="settle-right">
+              <div class="amount negative">₹{{ "%.2f"|format(p.amount) }}</div>
+
               <form
                 action="{{ url_for('settlements.quick_settle_from_profile') }}"
                 method="POST"
-                style="margin: 0"
+                class="settle-form"
               >
                 <input type="hidden" name="group_id" value="{{ p.group_id }}" />
-                <input
-                  type="hidden"
-                  name="payer_id"
-                  value="{{ session['user_id'] }}"
-                />
-                <input
-                  type="hidden"
-                  name="receiver_id"
-                  value="{{ p.user_id }}"
-                />
+                <input type="hidden" name="payer_id" value="{{ session['user_id'] }}" />
+                <input type="hidden" name="receiver_id" value="{{ p.user_id }}" />
                 <input type="hidden" name="amount" value="{{ p.amount }}" />
 
                 <button type="submit" class="settle-btn">Settle</button>
               </form>
             </div>
           </div>
-          {% endfor %} {% else %}
-          <p class="muted-text" style="margin: 0">No pending payments 🎉</p>
-          {% endif %}
-        </div>
+          {% endfor %}
+        {% else %}
+          <p class="meta">No pending payments 🎉</p>
+        {% endif %}
+      </div>
 
-        <!-- YOU SHOULD COLLECT -->
-        <div class="card" style="padding: 18px">
-          <h3 style="margin: 0 0 12px 0">You Should Collect</h3>
+      <!-- YOU SHOULD COLLECT -->
+      <div class="card profile-section">
+        <h3 class="section-title">You Should Collect</h3>
 
-          {% if owed_list %} {% for p in owed_list %}
-          <div
-            style="
-              display: flex;
-              justify-content: space-between;
-              align-items: center;
-              padding: 12px 0;
-              border-bottom: 1px solid #eee;
-            "
-          >
-            <div>
-              <div style="font-weight: 700">{{ p.name }}</div>
+        {% if owed_list %}
+          {% for p in owed_list %}
+          <div class="settle-row">
+            <div class="settle-left">
+              <div class="member-name">{{ p.name }}</div>
               {% if p.group_name %}
-              <div class="muted-text" style="font-size: 12px">
-                {{ p.group_name }}
-              </div>
+              <div class="meta">{{ p.group_name }}</div>
               {% endif %}
             </div>
 
-            <div style="text-align: right">
-              <div style="font-weight: 800; color: #15803d">
-                ₹{{ "%.2f"|format(p.amount) }}
-              </div>
+            <div class="settle-right">
+              <div class="amount positive">₹{{ "%.2f"|format(p.amount) }}</div>
+
               <form
                 action="{{ url_for('settlements.quick_settle_from_profile') }}"
                 method="POST"
-                style="margin: 0"
+                class="settle-form"
               >
                 <input type="hidden" name="group_id" value="{{ p.group_id }}" />
                 <input type="hidden" name="payer_id" value="{{ p.user_id }}" />
-                <input
-                  type="hidden"
-                  name="receiver_id"
-                  value="{{ session['user_id'] }}"
-                />
+                <input type="hidden" name="receiver_id" value="{{ session['user_id'] }}" />
                 <input type="hidden" name="amount" value="{{ p.amount }}" />
 
                 <button type="submit" class="settle-btn">Settle</button>
               </form>
             </div>
           </div>
-          {% endfor %} {% else %}
-          <p class="muted-text" style="margin: 0">No one owes you right now.</p>
-          {% endif %}
-        </div>
+          {% endfor %}
+        {% else %}
+          <p class="meta" style="margin-top: 20px;">No one owes you right now.</p>
+        {% endif %}
       </div>
 
-      <!-- ACCOUNT ACTIONS -->
-      <div
-        class="card"
-        style="
-          margin-top: 18px;
-          padding: 18px;
-          display: flex;
-          gap: 12px;
-          justify-content: space-between;
-          align-items: center;
-        "
-      >
-      </div>
     </div>
+
   </div>
 </div>
 
