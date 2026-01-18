@@ -117,7 +117,12 @@ a {
 }
 
 .btn.primary {
-  background: #2f3e34;
+  background-color: #2e3931;
+  color: #ffffff;
+}
+
+.btn.member-btn {
+  background-color: #1e2721;
   color: #ffffff;
 }
 
@@ -127,7 +132,7 @@ a {
 }
 
 .btn.primary:hover {
-  background: #243229;
+  background: #000000;
 }
 
 .btn.secondary {
@@ -155,13 +160,13 @@ a {
 }
 
 .btn.danger {
-  background: #9b2c2c;
-  color: #000000;
+  background: #981616;
+  color: #ffffff;
   border: none;
 }
 
 .btn.danger:hover {
-  background: #ffffff;
+  background: #3b2020;
 }
 
 /* ---------- CARDS ---------- */
@@ -181,7 +186,7 @@ a {
 }
 
 .members-card .member-list {
-  max-height: 250px;
+  max-height: 300px;
   overflow-y: auto;
   padding-right: 6px;
 }
@@ -261,42 +266,55 @@ label {
 /* ---------- BALANCES ---------- */
 .balance-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 16px;
+  align-items: start;
 }
 
 .balance {
   font-family: "Times New Roman";
-  background: #fffdfa;
-  border-radius: 10px;
-  padding: 16px 18px;
-  min-width: 180px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.06);
-  border: 1px solid #efe7dc;
-  transition: box-shadow 0.2s ease;
+    background: #ffffff;
+    border-radius: 10px;
+    padding: 24px;
+    margin-bottom: 24px;
+    border: 1px solid #e3dfd8;
+    transition: box-shadow 0.2s ease;
 }
 
 .balance:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-4px); 
+  border-color: #d4c5b6; box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
+
 .balance strong {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
-  color: #2b2b2b;
+  color: #000000;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .balance p {
-  font-family: serif;
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
   font-size: 17px;
   font-weight: 500;
   margin: 4px 0;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.balance small {
+  color: black;
+  font-family: serif;
+  white-space: normal;
+  word-break: break-word;
 }
 
 .balance.zero {
   border-left: 4px solid #050807;
 }
+
 
 /* .balance-summary {
     font-family: serif;
@@ -411,10 +429,11 @@ li {
 }
 
 .user-name {
-  font-family: Cambria, Cochin, Georgia, Times, "Times New Roman", serif;
-  font-size: 14px;
-  color: #000000;
-  font-weight: 500;
+  font-family: "Playfair Display", serif;
+  letter-spacing: 0.0ch;
+  font-size: 16px;
+  color: #220000;
+  font-weight: 600;
   padding-right: 6px;
 }
 
@@ -1165,6 +1184,10 @@ li {
   color: #b42318;
 }
 
+.neutral-card {
+  border-bottom: 4px solid #6f6f6f;
+}
+
 /* Urgency Tag */
 .urgency-tag {
   margin-top: 12px;
@@ -1277,7 +1300,7 @@ li {
   background: #ffffff;
   padding: 24px;
   border-radius: 12px;
-  border: 1px solid #e3dfd8;
+  border: 1px solid #848381;
 }
 
 .quick-actions-card h4 {
@@ -1299,7 +1322,7 @@ li {
   align-items: center;
   gap: 8px;
   padding: 12px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-weight: 500;
   width: 100%;
 }
@@ -1308,6 +1331,31 @@ li {
   font-size: 18px;
   line-height: 14px;
 }
+
+.settle-btn{
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+
+  background: transparent;
+  border: 1px solid #d8d2c8;
+  color: #2f3e34;
+
+  transition: 0.2s ease;
+}
+
+.settle-btn:hover{
+  background: #2f3e34;
+  border-color: #2f3e34;
+  color: white;
+}
+
+.settle-btn:active{
+  transform: scale(0.98);
+}
+
 
 .action-btn.secondary[disabled] {
   background: #f4f1ed;
@@ -1451,3 +1499,137 @@ main.full-width {
   border-radius: 999px;
   font-weight: 500;
 }
+
+/* 
+.suggestions-grid{
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.suggested-card{
+  border: 1px solid #eee;
+  border-radius: 14px;
+  padding: 14px;
+  background: #fff;
+}
+
+.settlement-grid{
+  display: grid;
+  grid-template-columns: 1fr 1fr 180px;
+  gap: 10px;
+  align-items: center;
+}
+
+.cell.label{
+  font-size: 12px;
+  color: #888;
+  font-weight: 700;
+}
+
+.cell.value{
+  font-size: 15px;
+  font-weight: 700;
+  color: #111;
+}
+
+.cell.amount{
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.cell.note{
+  grid-column: 1 / -1;
+  font-size: 12px;
+  color: #777;
+  margin-top: 6px;
+}
+
+.right{
+  text-align: right;
+}
+
+@media (max-width: 800px){
+  .settlement-grid{
+    grid-template-columns: 1fr;
+  }
+  .right{
+    text-align: left;
+  }
+}
+ */
+
+ /* From Uiverse.io by JaydipPrajapati1910 */ 
+.Btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+
+  width: 45px;
+  height: 45px;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+
+  position: relative;
+  overflow: hidden;
+
+  transition-duration: 0.3s;
+  box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.199);
+
+  background-color: rgb(32, 18, 17);
+
+  text-decoration: none; /* IMPORTANT for <a> */
+}
+
+/* icon */
+.sign {
+  width: 100%;
+  transition-duration: 0.3s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.sign svg {
+  width: 17px;
+}
+
+.sign svg path {
+  fill: white;
+}
+
+/* text */
+.text {
+  font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+  position: absolute;
+  right: 0%;
+  width: 0%;
+  opacity: 0;
+  color: white;
+  font-weight: 600;
+  transition-duration: 0.3s;
+  white-space: nowrap;
+}
+
+/* hover expand */
+.Btn:hover {
+  width: 100px;
+  border-radius: 40px;
+}
+
+  .Btn:hover .sign {
+    width: 30%;
+    padding-left: 20px;
+  }
+
+  .Btn:hover .text {
+    opacity: 1;
+    width: 70%;
+    padding-right: 10px;
+  }
+
+
+  .Btn:active {
+    transform: translate(2px, 2px);
+  }

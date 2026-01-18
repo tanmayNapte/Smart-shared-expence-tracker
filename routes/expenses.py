@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Blueprint, request, jsonify, redirect, flash, session, render_template
 from routes import settlements
 from utils.decorators import login_required
@@ -11,7 +12,7 @@ from services.expense_service import (
     ExpenseNotFoundError,
     PermissionError
 )
-from models import Expense, Settlement, User, GroupMember
+from models import User, Group, Expense, Settlement, GroupMember
 from sqlalchemy import desc
 
 
@@ -218,6 +219,34 @@ def activity_page():
                 "meta": f"Created by {created_by_name}",
                 "time": getattr(e, "created_at", None)
             })
+    
+        # SETTLEMENT activities
+    if filter_type in ["all", "settlement"]:
+
+        settlements = Settlement.query.filter(
+            (Settlement.payer_id == session["user_id"]) |
+            (Settlement.receiver_id == session["user_id"])
+        ).order_by(Settlement.id.desc()).limit(30).all()
+
+        for s in settlements:
+            payer = User.query.get(s.payer_id)
+            receiver = User.query.get(s.receiver_id)
+            group = Group.query.get(s.group_id)
+
+            payer_name = payer.name if payer else "Unknown"
+            receiver_name = receiver.name if receiver else "Unknown"
+            group_name = group.name if group else "Unknown Group"
+
+            activities.append({
+                "type": "settlement",
+                "title": f"{payer_name} paid {receiver_name} ₹{s.amount}",
+                "subtitle": f"Settlement in {group_name}",
+                "meta": "Settlement recorded",
+                "time": getattr(s, "created_at", None)
+            })
+    
+        activities.sort(key=lambda x: x["time"] or datetime.min, reverse=True)
+
 
     # For now settlements disabled until we confirm model fields
     # if filter_type in ["all", "settlement"]:

@@ -6,7 +6,16 @@
 <div class="dashboard-wrapper">
 
   <main class="dashboard-main">
-<a href="/dashboard" class="link" style = "margin-top: 20px">← Back to Dashboard</a>
+{% if selected_group_id %}
+<a href="/groups/{{ selected_group_id }}" class="link" style="display:inline-block; margin-top:20px;">
+  ← Back to Group
+</a>
+{% else %}
+<a href="/dashboard" class="link" style="display:inline-block; margin-top:20px;">
+  ← Back to Dashboard
+</a>
+{% endif %}
+
     <div class="card" style="max-width: 600px; margin: 2rem auto;">
       <h3>Add Expense</h3>
       <p class="muted-text">Create an expense in a group</p>

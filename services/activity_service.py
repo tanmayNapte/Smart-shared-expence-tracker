@@ -1,21 +1,24 @@
 from sqlalchemy import or_
-from models import Expense, Settlement, User, Group
+from datetime import datetime
+from models import Expense, Settlement, User, Group, GroupMember
 
-def get_activity_feed(user_id, limit=10):
-    """
-    Mixes Expenses + Settlements into one feed sorted by time.
-    """
+def get_activity_feed(user_id, limit=5):
+    # get my groups
+    my_group_ids = [
+        gm.group_id
+        for gm in GroupMember.query.filter_by(user_id=user_id).all()
+    ]
 
-    # Fetch recent expenses where user involved
+    # recent expenses from my groups
     expenses = (
         Expense.query
-        .filter(or_(Expense.created_by == user_id, Expense.paid_by == user_id))
+        .filter(Expense.group_id.in_(my_group_ids))
         .order_by(Expense.id.desc())
         .limit(limit)
         .all()
     )
 
-    # Fetch recent settlements where user involved
+    # recent settlements where I'm involved
     settlements = (
         Settlement.query
         .filter(or_(Settlement.payer_id == user_id, Settlement.receiver_id == user_id))
@@ -26,43 +29,32 @@ def get_activity_feed(user_id, limit=10):
 
     feed = []
 
-    # Expenses
+    # expenses
     for e in expenses:
-        group_name = "Unknown"
-        if getattr(e, "group_id", None):
-            g = Group.query.get(e.group_id)
-            if g:
-                group_name = g.name
-
+        g = Group.query.get(e.group_id) if e.group_id else None
         feed.append({
             "type": "expense",
-            "id": e.id,
-            "group_name": group_name,
-            "amount": float(getattr(e, "amount", 0)),
-            "title": getattr(e, "title", "Expense"),
+            "group_name": g.name if g else "Unknown",
+            "amount": float(e.amount),
+            "title": e.description or "Expense",
+            "time": getattr(e, "created_at", None),
         })
 
-    # Settlements
+    # settlements
     for s in settlements:
-        group_name = "Unknown"
-        if getattr(s, "group_id", None):
-            g = Group.query.get(s.group_id)
-            if g:
-                group_name = g.name
-
+        g = Group.query.get(s.group_id) if s.group_id else None
         payer = User.query.get(s.payer_id)
         receiver = User.query.get(s.receiver_id)
 
         feed.append({
             "type": "settlement",
-            "id": s.id,
-            "group_name": group_name,
+            "group_name": g.name if g else "Unknown",
             "amount": float(s.amount),
             "payer_name": payer.name if payer else "Unknown",
             "receiver_name": receiver.name if receiver else "Unknown",
+            "time": getattr(s, "created_at", None),
         })
 
-    # Sort by newest id (works even if you don't have created_at)
-    feed.sort(key=lambda x: x["id"], reverse=True)
-
+    # sort by time (fallback)
+    feed.sort(key=lambda x: x["time"] or datetime.min, reverse=True)
     return feed[:limit]

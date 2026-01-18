@@ -32,13 +32,19 @@
         </div>
 
         <div class="nav-right">
-          {% if current_user and current_user.role == "admin" %}
-          <a href="/admin/create-user" class="btn primary">Create User</a>
-          {% endif %}
-
           {% if current_user %}
-          <span class="user-name">Logged User: {{ current_user.name }}</span>
-          <a href="/logout" class="btn logout">Logout</a>
+          <a href="/profile" class="user-name" style="text-transform: uppercase"
+            >{{ current_user.name }}</a
+          >
+          {% endif %} 
+          
+          {% if current_user %}
+          <a href="/logout" class="Btn" title="Logout">
+              <div class="sign"><svg viewBox="0 0 512 512"><path d="M377.9 105.9L500.7 228.7c7.2 7.2 11.3 17.1 11.3 27.3s-4.1 20.1-11.3 27.3L377.9 406.1c-6.4 6.4-15 9.9-24 9.9c-18.7 0-33.9-15.2-33.9-33.9l0-62.1-128 0c-17.7 0-32-14.3-32-32l0-64c0-17.7 14.3-32 32-32l128 0 0-62.1c0-18.7 15.2-33.9 33.9-33.9c9 0 17.6 3.6 24 9.9zM160 96L96 96c-17.7 0-32 14.3-32 32l0 256c0 17.7 14.3 32 32 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32l-64 0c-53 0-96-43-96-96L0 128C0 75 43 32 96 32l64 0c17.7 0 32 14.3 32 32s-14.3 32-32 32z"></path></svg></div>
+
+            <div class="text">Logout</div>
+          </a>
+
           {% endif %}
         </div>
       </nav>
@@ -47,24 +53,35 @@
 
     <!-- LAYOUT WRAPPER -->
     <div class="dashboard-wrapper">
-
       {% if show_sidebar is not defined or show_sidebar %}
       <!-- SIDEBAR -->
       <aside class="ledger-sidebar">
         <nav class="sidebar-nav">
-          <a href="/dashboard" class="nav-item {% if request.path == '/dashboard' %}active{% endif %}">
+          <a
+            href="/dashboard"
+            class="nav-item {% if request.path == '/dashboard' %}active{% endif %}"
+          >
             <span class="icon">⊞</span> Dashboard
           </a>
 
-          <a href="/groups" class="nav-item {% if request.path.startswith('/groups') %}active{% endif %}">
+          <a
+            href="/groups"
+            class="nav-item {% if request.path.startswith('/groups') %}active{% endif %}"
+          >
             <span class="icon">👥</span> Groups
           </a>
 
-          <a href="/activity" class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}">
+          <a
+            href="/activity"
+            class="nav-item {% if request.path.startswith('/activity') %}active{% endif %}"
+          >
             <span class="icon">⚡</span> Activity
           </a>
 
-          <a href="/profile" class="nav-item {% if request.path.startswith('/profile') %}active{% endif %}">
+          <a
+            href="/profile"
+            class="nav-item {% if request.path.startswith('/profile') %}active{% endif %}"
+          >
             <span class="icon">👤</span> Profile
           </a>
         </nav>
@@ -73,19 +90,15 @@
 
       <!-- MAIN CONTENT -->
       <main class="main-content {% block main_class %}{% endblock %}">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-          {% if messages %}
-          <div class="flash-container">
-            {% for category, message in messages %}
-            <div class="flash flash-{{ category }}">{{ message }}</div>
-            {% endfor %}
-          </div>
-          {% endif %}
-        {% endwith %}
-
-        {% block content %}{% endblock %}
+        {% with messages = get_flashed_messages(with_categories=true) %} {% if
+        messages %}
+        <div class="flash-container">
+          {% for category, message in messages %}
+          <div class="flash flash-{{ category }}">{{ message }}</div>
+          {% endfor %}
+        </div>
+        {% endif %} {% endwith %} {% block content %}{% endblock %}
       </main>
-
     </div>
   </body>
 </html>

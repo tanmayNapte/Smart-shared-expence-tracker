@@ -1,17 +1,13 @@
-{% extends "base.html" %}
-{% block main_class %}full-width{% endblock %}
-{% block content %}
+{% extends "base.html" %} {% block main_class %}full-width{% endblock %} {%
+block content %}
 
 <div class="dashboard-wrapper">
-
   <!-- LEFT SIDEBAR -->
 
   <!-- MAIN CONTENT -->
   <main class="dashboard-main">
-
     <!-- TOP SUMMARY CARDS -->
     <section class="summary-cards">
-
       <!-- YOU WILL GET -->
       <div class="card ledger-card positive-card">
         <div class="card-header">
@@ -19,9 +15,9 @@
           <span class="icon">↗</span>
         </div>
         <div class="card-amount">
-          {% set gets = people_balances | selectattr("amount", "gt", 0) | list %}
-          {% set total_get = gets | map(attribute="amount") | sum %}
-          ₹{{ total_get }}
+          {% set gets = people_balances | selectattr("amount", "gt", 0) | list
+          %} {% set total_get = gets | map(attribute="amount") | sum %} ₹{{
+          "%.2f"|format(total_get) }}
         </div>
       </div>
 
@@ -32,15 +28,13 @@
           <span class="icon">↙</span>
         </div>
         <div class="card-amount">
-          {% set owes = people_balances | selectattr("amount", "lt", 0) | list %}
-          {% set total_owe = owes | map(attribute="amount") | sum | abs %}
-          ₹{{ total_owe }}
+          {% set owes = people_balances | selectattr("amount", "lt", 0) | list
+          %} {% set total_owe = owes | map(attribute="amount") | sum | abs %}
+          ₹{{ "%.2f"|format(total_owe) }}
         </div>
 
         {% if total_owe > 0 %}
-        <div class="urgency-tag">
-          ⚠️ Settlements pending
-        </div>
+        <div class="urgency-tag">⚠️ Settlements pending</div>
         {% endif %}
       </div>
 
@@ -49,22 +43,21 @@
         <div class="card-header">
           <span class="label">Net Position</span>
         </div>
-        <div class="card-amount {{ 'positive' if total_balance >= 0 else 'negative' }}">
-          {{ '+' if total_balance > 0 else '' }}₹{{ total_balance }}
+        <div
+          class="card-amount {{ 'positive' if total_balance >= 0 else 'negative' }}"
+        >
+          {{ '+' if total_balance > 0 else '' }}₹{{ "%.2f"|format(total_balance)
+          }}
         </div>
       </div>
-
     </section>
 
     <div class="dashboard-content-grid">
-
       <!-- RECENT ACTIVITY -->
       <div class="activity-feed">
-  {% if activity_feed %}
-    {% for item in activity_feed %}
-      <div class="activity-item">
-
-        {% if item.type == "settlement" %}
+        {% if activity_feed %} {% for item in activity_feed[:5] %}
+        <div class="activity-item">
+          {% if item.type == "settlement" %}
           <div class="activity-icon settlement">🤝</div>
 
           <div class="activity-details">
@@ -77,7 +70,7 @@
             <span class="activity-time">Settlement Recorded</span>
           </div>
 
-        {% else %}
+          {% else %}
           <div class="activity-icon expense">💸</div>
 
           <div class="activity-details">
@@ -89,33 +82,44 @@
             </span>
             <span class="activity-time">Expense</span>
           </div>
+          {% endif %}
+        </div>
+        {% endfor %} {% else %}
+        <p class="muted-text">No recent activity</p>
         {% endif %}
-
       </div>
-    {% endfor %}
-  {% else %}
-    <p class="muted-text">No recent activity</p>
-  {% endif %}
-</div>
-
 
       <!-- QUICK ACTIONS -->
       <div class="actions-section">
+  <div class="quick-actions-card">
+    <h4>Quick Actions</h4>
 
-        <div class="quick-actions-card">
-          <h4>Quick Actions</h4>
-          <div class="action-buttons">
-            <a href="/groups/new" class="btn action-btn primary">
-              <span class="plus">+</span> Create Group
-            </a>
-            <a href="/expenses/new" class="btn action-btn secondary">
-              Add Expense
-            </a>
-            <a href="/settlements/new" class="btn action-btn secondary">
-              Settle Up
-            </a>
-          </div>
-        </div>
+    <div class="action-buttons">
+
+      <!-- MAIN ACTIONS -->
+      <a href="/expenses/new" class="btn action-btn primary">
+        + Add Expense
+      </a>
+
+      <a href="/settlements/new" class="btn action-btn secondary">
+        🤝 Settle Up
+      </a>
+
+      <a href="/groups/new" class="btn action-btn secondary small">
+        + Create Group
+      </a>
+
+      <!-- ADMIN ONLY -->
+      {% if current_user and current_user.role == "admin" %}
+      <a href="/admin/create-user" class="btn action-btn member-btn small">
+        + Create User
+      </a>
+      {% endif %}
+
+    </div>
+  </div>
+</div>
+
 
         <!-- URGENCY ALERT -->
         {% if total_owe > 0 %}
@@ -128,10 +132,8 @@
           </div>
         </div>
         {% endif %}
-
       </div>
     </div>
-
   </main>
 </div>
 
