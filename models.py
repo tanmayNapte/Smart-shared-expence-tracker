@@ -44,6 +44,7 @@ class Expense(db.Model):
     last_edited_at = db.Column(db.DateTime, nullable=True)
 
     # NEW FIELDS
+    category = db.Column(db.String(50), nullable=False, server_default='General')
     split_type = db.Column(db.String(20), default="equal")
     version = db.Column(db.Integer, default=1)
     is_active = db.Column(db.Boolean, default=True)
