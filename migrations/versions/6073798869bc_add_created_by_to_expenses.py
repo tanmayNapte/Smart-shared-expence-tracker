@@ -1,3 +1,9 @@
+# revision identifiers, used by Alembic.
+revision = '6073798869bc'
+down_revision = '9e43dc25dc73'
+branch_labels = None
+depends_on = None
+
 from alembic import op
 import sqlalchemy as sa
 

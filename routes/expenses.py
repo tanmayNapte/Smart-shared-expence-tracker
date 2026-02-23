@@ -34,7 +34,8 @@ def api_add_expense():
             paid_by=data["paid_by"],
             created_by=user_id,
             description=data.get("description"),
-            splits=splits if splits else None
+            splits=splits if splits else None,
+            split_type=data.get("split_type", "equal")
         )
         return jsonify({"status": "ok", "expense_id": expense.id})
     except (InvalidExpenseDataError, GroupNotFoundError) as e:

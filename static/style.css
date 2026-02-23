@@ -1804,3 +1804,198 @@ main.full-width {
 .empty-text{
   margin: 0;
 }
+
+/* ========================================
+   CREATE EXPENSE PAGE
+======================================== */
+
+.back-link {
+  display: inline-block;
+  margin-top: 20px;
+}
+
+/* Card container */
+.expense-card {
+  max-width: 700px;
+  margin: 2rem auto;
+}
+
+/* Split section wrapper */
+.split-section {
+  margin-top: 1.5rem;
+  border-top: 1px solid #dcd6cb;
+  padding-top: 1rem;
+}
+
+.members-container {
+  margin-top: 1rem;
+}
+
+/* Summary */
+.split-summary {
+  margin-top: 1rem;
+  font-weight: 600;
+  text-align: right;
+  font-family: serif;
+  color: #2f3e34;
+}
+
+/* Form action spacing */
+.form-actions {
+  margin-top: 2rem;
+}
+
+/* ========================================
+   SPLIT ROWS
+======================================== */
+
+.split-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #e3dfd8;
+  transition: background 0.15s ease;
+}
+
+.split-row:last-child {
+  border-bottom: none;
+}
+
+.split-row:hover {
+  background: #faf7f3;
+}
+
+.split-member-name {
+  font-family: "Playfair Display", serif;
+  font-weight: 600;
+  font-size: 16px;
+  color: #000000;
+}
+
+/* Right side container */
+.split-input-wrapper {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+/* Amount preview */
+.split-amount {
+  font-size: 17px;
+  min-width: 75px;
+  text-align: right;
+  font-family: 'Times New Roman', Times, serif;
+  color: #000000;
+}
+
+/* ========================================
+   SPLIT INPUTS
+======================================== */
+
+.split-input {
+  width: 60px;          /* reduced width */
+  height: 34px;
+  padding: 4px 8px;
+  border-radius: 8px;
+  border: 1px solid #d8d2c8;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 500;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+
+/* Focus state */
+.split-input:focus {
+  outline: none;
+  border-color: #2f3e34;
+  box-shadow: 0 0 0 3px rgba(47, 62, 52, 0.08);
+}
+
+/* Remove ugly number input arrows (optional but cleaner) */
+.split-input::-webkit-outer-spin-button,
+.split-input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+.split-input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+/* Checkbox */
+.split-input[type="checkbox"] {
+  width: auto;
+  accent-color: #2f3e34;
+}
+
+
+/* ========================================
+   VALIDATION STATES (Optional Upgrade)
+======================================== */
+
+.split-summary.valid {
+  color: #067647;
+}
+
+.split-summary.invalid {
+  color: #b42318;
+}
+
+
+
+
+/* Prevent full page scroll */
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden;
+}
+
+/* Navbar fixed at top */
+header {
+    flex-shrink: 0;
+}
+
+/* Layout wrapper */
+.dashboard-wrapper {
+    display: flex;
+    height: calc(100vh - 70px); /* subtract navbar height */
+}
+
+/* Sidebar fixed */
+.ledger-sidebar {
+    width: 250px;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* Main content area */
+.main-content {
+    flex: 1;
+    height: 100%;
+    overflow-y: auto;  /* THIS makes only content scroll */
+    padding: 24px;
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e1 translucent;
+}
+
+/* Apply only to main content scroll */
+.main-content::-webkit-scrollbar {
+    width: 5px;   /* 🔥 Change this value */
+}
+
+.main-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.main-content::-webkit-scrollbar-thumb {
+    background: #cbd5e1;   /* soft gray */
+    border-radius: 10px;
+}
+
+.main-content::-webkit-scrollbar-thumb:hover {
+    background: #94a3b8;
+}

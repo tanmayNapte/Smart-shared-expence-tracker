@@ -43,9 +43,7 @@ block content %}
         <div class="card-header">
           <span class="label">Net Position</span>
         </div>
-        <div
-          class="card-amount {{ 'positive' if total_balance >= 0 else 'negative' }}"
-        >
+        <div class="card-amount {{ 'positive' if total_balance >= 0 else 'negative' }}">
           {{ '+' if total_balance > 0 else '' }}₹{{ "%.2f"|format(total_balance)
           }}
         </div>
@@ -91,33 +89,33 @@ block content %}
 
       <!-- QUICK ACTIONS -->
       <div class="actions-section">
-  <div class="quick-actions-card">
-    <h4>Quick Actions</h4>
+        <div class="quick-actions-card">
+          <h4>Quick Actions</h4>
 
-    <div class="action-buttons">
+          <div class="action-buttons">
 
-      <!-- MAIN ACTIONS -->
-      <a href="/expenses/new" class="btn action-btn primary">
-        + Add Expense
-      </a>
+            <!-- MAIN ACTIONS -->
+            <a href="/expenses/new" class="btn action-btn primary">
+              + Add Expense
+            </a>
 
-      <a href="/settlements/new" class="btn action-btn secondary">
-        🤝 Settle Up
-      </a>
+            <a href="/settlements/new" class="btn action-btn secondary">
+              🤝 Settle Up
+            </a>
 
-      <a href="/groups/new" class="btn action-btn secondary small">
-        + Create Group
-      </a>
+            <a href="/groups/new" class="btn action-btn secondary small">
+              + Create Group
+            </a>
 
-      <!-- ADMIN ONLY -->
-      {% if current_user and current_user.role == "admin" %}
-      <a href="/admin/create-user" class="btn action-btn member-btn small">
-        + Create User
-      </a>
-      {% endif %}
-    </div>
-  </div>
-   {% if total_owe > 0 %}
+            <!-- ADMIN ONLY -->
+            {% if current_user and current_user.role == "admin" %}
+            <a href="/admin/create-user" class="btn action-btn member-btn small">
+              + Create User
+            </a>
+            {% endif %}
+          </div>
+        </div>
+        {% if total_owe > 0 %}
         <div class="alert-card">
           <div class="alert-icon">⚠️</div>
           <div class="alert-content">
@@ -126,7 +124,7 @@ block content %}
           </div>
         </div>
         {% endif %}
-</div>
+      </div>
 
 
 

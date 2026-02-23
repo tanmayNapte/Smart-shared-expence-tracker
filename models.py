@@ -38,14 +38,22 @@ class Expense(db.Model):
     amount = db.Column(db.Float, nullable=False)
     description = db.Column(db.String(255))
     paid_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
+    category = db.Column(db.String(50), nullable=False, default="General")
+
     created_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"), nullable=True)
     last_edited_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"), nullable=True)
     last_edited_at = db.Column(db.DateTime, nullable=True)
+
+    # NEW FIELDS
+    split_type = db.Column(db.String(20), default="equal")
+    version = db.Column(db.Integer, default=1)
+    is_active = db.Column(db.Boolean, default=True)
+
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-    # Relationships
     group = db.relationship("Group", backref="expenses")
     payer = db.relationship("User", foreign_keys=[paid_by], backref="expenses_paid")
+
 
 
 class ExpenseSplit(db.Model):

@@ -296,7 +296,7 @@ def calculate_balances(group_id):
         balances[member.user_id] = 0.0
     
     # Add expenses paid
-    expenses = Expense.query.filter_by(group_id=group_id).all()
+    expenses = Expense.query.filter_by(group_id=group_id, is_active=True).all()
     for expense in expenses:
         balances[expense.paid_by] += expense.amount
     
@@ -304,7 +304,9 @@ def calculate_balances(group_id):
     for expense in expenses:
         splits = ExpenseSplit.query.filter_by(expense_id=expense.id).all()
         for split in splits:
+            balances.setdefault(split.user_id, 0)
             balances[split.user_id] -= split.amount
+
     
     # Apply settlements
     settlements = Settlement.query.filter_by(group_id=group_id).all()
@@ -413,7 +415,8 @@ def get_group_display_data(group_id, current_user_id):
     
     # Get expenses
     expenses = Expense.query.filter_by(
-        group_id=group_id
+        group_id=group_id,
+        is_active=True
     ).order_by(Expense.created_at.desc()).all()
     
     # Format expenses with payer names and audit info

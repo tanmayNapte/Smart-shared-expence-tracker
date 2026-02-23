@@ -14,6 +14,9 @@ from services.group_service import (
 from models import db, User
 from services.ledger_service import get_user_net_balances_by_person
 from services.activity_service import get_activity_feed
+from flask import send_file
+from services.report_service import generate_group_pdf
+from models import Group
 
 
 
@@ -132,13 +135,16 @@ def dashboard():
         people_balances = get_user_net_balances_by_person(user_id)
 
         activity_feed = get_activity_feed(user_id, limit=10)
+        
+
 
         return render_template(
             "dashboard.html",
             groups=groups,
             total_balance=total_balance,
             people_balances=people_balances,
-            activity_feed=activity_feed
+            activity_feed=activity_feed,
+
         )
 
     except Exception as e:
@@ -152,7 +158,8 @@ def dashboard():
             groups=groups,
             total_balance=total_balance,
             people_balances=people_balances,
-            activity_feed=activity_feed
+            activity_feed=activity_feed,
+
         )
 
 
@@ -343,4 +350,15 @@ def delete_group(group_id):
         flash("Not authorized to delete this group", "error")
         return redirect("/dashboard")
 
-    
+@groups_bp.route("/groups/<int:group_id>/report")
+def download_group_report(group_id):
+    group = Group.query.get_or_404(group_id)
+
+    pdf = generate_group_pdf(group)
+
+    return send_file(
+        pdf,
+        as_attachment=True,
+        download_name=f"{group.name}_report.pdf",
+        mimetype="application/pdf"
+    )

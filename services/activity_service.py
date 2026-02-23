@@ -12,7 +12,10 @@ def get_activity_feed(user_id, limit=5):
     # recent expenses from my groups
     expenses = (
         Expense.query
-        .filter(Expense.group_id.in_(my_group_ids))
+        .filter(
+            Expense.group_id.in_(my_group_ids),
+            Expense.is_active == True
+        )
         .order_by(Expense.id.desc())
         .limit(limit)
         .all()

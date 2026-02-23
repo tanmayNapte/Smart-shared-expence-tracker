@@ -10,7 +10,8 @@ Rules:
 """
 from models import db, Expense, ExpenseSplit, GroupMember, User
 from datetime import datetime
-
+from services.split_engine import SplitEngine
+from models import ExpenseSplit, Settlement
 
 class ExpenseNotFoundError(Exception):
     """Raised when an expense is not found"""
@@ -32,76 +33,39 @@ class PermissionError(Exception):
     pass
 
 
-def create_expense(group_id, amount, paid_by, created_by, description=None, splits=None):
-    """
-    Create an expense with splits.
-    
-    Args:
-        group_id: Group ID
-        amount: Expense amount (float)
-        paid_by: User ID who paid
-        description: Optional description
-        splits: Dict mapping user_id to amount_owed (optional)
-                If None, splits equally among all group members
-    
-    Returns:
-        Expense object
-    
-    Raises:
-        InvalidExpenseDataError: If data is invalid
-        GroupNotFoundError: If group doesn't exist
-    """
-    if not group_id or not amount or not paid_by:
-        raise InvalidExpenseDataError("group_id, amount, and paid_by are required")
-    
-    if amount <= 0:
-        raise InvalidExpenseDataError("Amount must be positive")
-    
-    # Validate group exists
-    from services.group_service import get_group_by_id
-    try:
-        get_group_by_id(group_id)
-    except Exception:
-        raise GroupNotFoundError(f"Group {group_id} not found")
-    
-    # Create expense
+
+def create_expense(group_id, amount, paid_by, created_by, description=None, splits=None, split_type="equal"):
+
+    if splits:
+        calculated_splits = SplitEngine.calculate(amount, split_type, splits)
+    else:
+        # equal split among group members
+        members = GroupMember.query.filter_by(group_id=group_id).all()
+        user_ids = [m.user_id for m in members]
+        calculated_splits = SplitEngine.calculate(amount, "equal", user_ids)
+        split_type = "equal"
+
     expense = Expense(
         group_id=group_id,
-        amount=float(amount),
-        paid_by=int(paid_by),
-        created_by=int(created_by),
-        description=description.strip() if description else None
+        amount=amount,
+        paid_by=paid_by,
+        created_by=created_by,
+        description=description,
+        split_type=split_type
     )
+
     db.session.add(expense)
-    db.session.flush()  # Get expense.id before creating splits
-    
-    # Create splits
-    if splits:
-        # Use provided splits
-        for user_id, amount in splits.items():
-            db.session.add(
-                ExpenseSplit(
-                    expense_id=expense.id,
-                    user_id=int(user_id),
-                    amount=float(amount)
-                )
+    db.session.flush()
+
+    for uid, amt in calculated_splits.items():
+        db.session.add(
+            ExpenseSplit(
+                expense_id=expense.id,
+                user_id=uid,
+                amount=amt
             )
-    else:
-        # Split equally among all group members
-        members = GroupMember.query.filter_by(group_id=group_id).all()
-        if not members:
-            raise InvalidExpenseDataError("Group has no members")
-        
-        split_amount = amount / len(members)
-        for member in members:
-            db.session.add(
-                ExpenseSplit(
-                    expense_id=expense.id,
-                    user_id=member.user_id,
-                    amount=split_amount
-                )
-            )
-    
+        )
+
     db.session.commit()
     return expense
 
@@ -140,92 +104,61 @@ def get_group_expenses(group_id):
     ).order_by(Expense.created_at.desc()).all()
 
 
-def edit_expense(expense_id, user_id, amount=None, paid_by=None, description=None):
-    """
-    Edit an expense.
-    
-    Rules:
-    - Only the creator of the expense or group admin can edit
-    - If amount or paid_by changes, expense splits need to be recalculated
-    
-    Args:
-        expense_id: Expense ID
-        user_id: User ID attempting to edit
-        amount: New amount (optional)
-        paid_by: New payer ID (optional)
-        description: New description (optional)
-    
-    Returns:
-        Updated Expense object
-    
-    Raises:
-        ExpenseNotFoundError: If expense doesn't exist
-        PermissionError: If user doesn't have permission
-        InvalidExpenseDataError: If data is invalid
-    """
-    expense = get_expense_by_id(expense_id)
-    user = User.query.get(user_id)
-    
-    if not user:
-        raise PermissionError("Invalid user")
-    
-    # Check permission: creator or admin
-    from services.group_service import get_group_by_id
-    group = get_group_by_id(expense.group_id)
-    
-    can_edit = (
-        expense.created_by == user_id or
-        user.role == "admin" or
-        group.created_by == user_id
-    )
-    
-    if not can_edit:
-        raise PermissionError("You don't have permission to edit this expense")
-    
-    # Update fields
-    need_recalculate_splits = False
-    
-    if amount is not None:
-        if amount <= 0:
-            raise InvalidExpenseDataError("Amount must be positive")
-        if expense.amount != float(amount):
-            expense.amount = float(amount)
-            need_recalculate_splits = True
-    
-    if paid_by is not None:
-        if expense.paid_by != int(paid_by):
-            expense.paid_by = int(paid_by)
-            # No need to recalculate splits if only payer changes
-    
-    if description is not None:
-        expense.description = description.strip() if description else None
-    
-    # Recalculate splits if amount changed
-    if need_recalculate_splits:
-        # Delete existing splits
-        ExpenseSplit.query.filter_by(expense_id=expense.id).delete()
-        
-        # Create new splits (equal split)
+def edit_expense(expense_id, user_id, amount=None, paid_by=None, description=None, splits=None, split_type=None):
+
+    expense = Expense.query.filter_by(id=expense_id, is_active=True).first()
+
+    if not expense:
+        raise ExpenseNotFoundError("Expense not found")
+
+    # BLOCK edit if settlement exists
+    settlement_exists = Settlement.query.filter_by(group_id=expense.group_id).first()
+    if settlement_exists:
+        raise InvalidExpenseDataError("Cannot edit expense after settlement")
+
+    # deactivate old version
+    expense.is_active = False
+
+    new_amount = amount if amount else expense.amount
+    new_paid_by = paid_by if paid_by else expense.paid_by
+    new_description = description if description else expense.description
+    new_split_type = split_type if split_type else expense.split_type
+
+    if splits:
+        calculated_splits = SplitEngine.calculate(new_amount, new_split_type, splits)
+    else:
         members = GroupMember.query.filter_by(group_id=expense.group_id).all()
-        if not members:
-            raise InvalidExpenseDataError("Group has no members")
-        
-        split_amount = expense.amount / len(members)
-        for member in members:
-            db.session.add(
-                ExpenseSplit(
-                    expense_id=expense.id,
-                    user_id=member.user_id,
-                    amount=split_amount
-                )
+        user_ids = [m.user_id for m in members]
+        calculated_splits = SplitEngine.calculate(new_amount, "equal", user_ids)
+        new_split_type = "equal"
+
+    new_expense = Expense(
+        group_id=expense.group_id,
+        amount=new_amount,
+        paid_by=new_paid_by,
+        description=new_description,
+        created_by=expense.created_by,
+        last_edited_by=user_id,
+        last_edited_at=datetime.utcnow(),
+        split_type=new_split_type,
+        version=expense.version + 1
+    )
+
+    db.session.add(new_expense)
+    db.session.flush()
+
+    for uid, amt in calculated_splits.items():
+        db.session.add(
+            ExpenseSplit(
+                expense_id=new_expense.id,
+                user_id=uid,
+                amount=amt
             )
-    
-    # Update audit fields
-    expense.last_edited_by = user_id
-    expense.last_edited_at = datetime.utcnow()
-    
+        )
+
     db.session.commit()
-    return expense
+    return new_expense
+
 
 
 def delete_expense(expense_id, user_id):

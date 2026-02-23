@@ -16,7 +16,7 @@ def get_user_net_balances_by_person(user_id):
     net = defaultdict(float)
 
     # 1️⃣ Expenses YOU paid → others owe you
-    paid_expenses = Expense.query.filter_by(paid_by=user_id).all()
+    paid_expenses = Expense.query.filter_by(paid_by=user_id, is_active=True).all()
 
     for expense in paid_expenses:
         for split in expense.splits:
@@ -30,7 +30,8 @@ def get_user_net_balances_by_person(user_id):
         .join(Expense)
         .filter(
             ExpenseSplit.user_id == user_id,
-            Expense.paid_by != user_id
+            Expense.paid_by != user_id,
+            Expense.is_active == True
         )
         .all()
     )
