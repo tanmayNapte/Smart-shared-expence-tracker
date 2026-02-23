@@ -38,7 +38,6 @@ class Expense(db.Model):
     amount = db.Column(db.Float, nullable=False)
     description = db.Column(db.String(255))
     paid_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"))
-    category = db.Column(db.String(50), nullable=False, default="General")
 
     created_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"), nullable=True)
     last_edited_by = db.Column(db.Integer, db.ForeignKey("expense_users.id"), nullable=True)
